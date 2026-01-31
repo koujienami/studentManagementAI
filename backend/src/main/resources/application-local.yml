@@ -1,0 +1,29 @@
+# 受講生管理システム - ローカル開発環境設定
+server:
+  port: 8080
+
+spring:
+  # データソース設定（docker-compose使用）
+  datasource:
+    url: jdbc:postgresql://localhost:5432/student_management
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+  # SQL初期化（開発時のみ）
+  sql:
+    init:
+      mode: always
+
+# JWT設定（ローカル開発用の秘密鍵）
+jwt:
+  secret-key: local-development-secret-key-do-not-use-in-production-32bytes
+
+# ログ設定（デバッグ有効）
+logging:
+  level:
+    root: INFO
+    com.student.management: DEBUG
+    org.springframework.security: DEBUG
+    org.mybatis: DEBUG
+    org.springframework.jdbc: DEBUG
