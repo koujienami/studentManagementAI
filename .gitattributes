@@ -1,0 +1,49 @@
+# 改行コードの自動正規化
+# チェックアウト時は環境に合わせ、コミット時はLFに統一
+* text=auto
+
+# テキストファイルは明示的にLFに統一
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# ソースコード
+*.java text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.css text eol=lf
+*.scss text eol=lf
+*.html text eol=lf
+*.sql text eol=lf
+*.properties text eol=lf
+*.xml text eol=lf
+
+# 設定ファイル
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+*.editorconfig text eol=lf
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+
+# シェルスクリプト（必ずLF）
+*.sh text eol=lf
+*.bash text eol=lf
+
+# バッチファイル（Windowsなので CRLF）
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# バイナリファイル（変換しない）
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.jar binary
+*.zip binary
+*.tar.gz binary
