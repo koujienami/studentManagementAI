@@ -1,0 +1,279 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'docs/**'
+      - 'CLAUDE.md'
+      - 'README.md'
+      - '*.md'
+      - 'backend/**'
+      - 'frontend/**'
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      docs_changed: ${{ steps.filter.outputs.docs }}
+      backend_changed: ${{ steps.filter.outputs.backend }}
+      frontend_changed: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect file changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs:
+              - 'docs/**'
+              - 'CLAUDE.md'
+              - 'README.md'
+              - '*.md'
+            backend:
+              - 'backend/**'
+              - 'docs/development/coding-rules/backend-rules.md'
+              - 'docs/architecture/database-design.md'
+              - 'docs/development/error-codes.md'
+            frontend:
+              - 'frontend/**'
+              - 'docs/development/coding-rules/frontend-rules.md'
+              - 'docs/development/coding-rules/common-rules.md'
+
+  claude-review:
+    needs: detect-changes
+    runs-on: ubuntu-latest
+    if: |
+      needs.detect-changes.outputs.docs_changed == 'true' ||
+      needs.detect-changes.outputs.backend_changed == 'true' ||
+      needs.detect-changes.outputs.frontend_changed == 'true'
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@beta
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          model: "claude-opus-4-5-20251101"
+          direct_prompt: |
+            # 統合レビュー実施
+
+            このPRで変更されたファイルを確認し、以下の領域のうち該当するもののみレビューを実施してください：
+            - ドキュメント変更（docs/**, *.md）
+            - バックエンド変更（backend/**）
+            - フロントエンド変更（frontend/**）
+
+            変更があった領域について、対応するセクションでレビューを実施してください。
+            変更がない領域はスキップし、そのセクションは出力しないでください。
+            各レビューは独立したセクションとして、見出し（## 📄 ドキュメントレビュー など）で明確に区切ってください。
+
+            ---
+
+            ## 📄 ドキュメントレビュー
+
+            **注**: ドキュメントファイル（docs/**, *.md）に変更がある場合のみ、以下のレビューを実施してください。変更がない場合はこのセクション全体をスキップしてください。
+
+            ### ステップ1: ドキュメント精査（必須）
+
+            以下のドキュメントを**必ず順番に読み込み、内容を理解してから**レビューを開始してください。
+            ドキュメントを読まずにレビューを開始することは禁止です。
+
+            【必須参照ドキュメント（この順で読む）】
+            1. `docs/01_要件定義/システム概要.md` - システム概要
+            2. `docs/01_要件定義/機能要件.md` - 機能要件
+            3. `docs/01_要件定義/非機能要件.md` - 非機能要件
+            4. `docs/01_要件定義/概念データモデル.md` - データベース設計
+
+            ### ステップ2: 過去のレビュー確認（重複指摘の防止）
+
+            **重要: 既に対応済みの指摘を繰り返さないため、以下を確認してください**
+
+            1. このPRの過去のレビューコメントを確認
+            2. 対応済みの項目（「✅ 対応済み」等のコメントがあるもの）は再指摘しない
+            3. 新規変更または未対応の項目のみをレビュー対象とする
+
+            ### ステップ3: 変更ファイルの理解
+
+            今回のPRで変更されたドキュメントファイルを確認し、以下を把握してください:
+            - 変更の意図（新規ドキュメント作成、既存ドキュメント更新、誤記修正等）
+            - 影響範囲（どのドキュメント・セクションに影響するか）
+            - 関連する他のドキュメントとの整合性
+
+            ### ステップ4: レビュー実施
+
+            上記の理解に基づいて、以下の観点でレビューを実施してください:
+
+            #### 重点確認事項（ドキュメント特化）
+
+            ##### 1. ドキュメント整合性
+            - [ ] 関連するドキュメント間で矛盾がないか
+            - [ ] 機能仕様書とコーディング規約が整合しているか
+            - [ ] データベース設計書とER図が一致しているか
+
+            ##### 2. ドキュメント構造
+            - [ ] 見出しレベル（#, ##, ###）が適切か
+            - [ ] 目次構成が論理的か
+            - [ ] セクション分けが適切か
+            - [ ] Markdownフォーマットが正しいか
+
+            ##### 3. 内容の正確性
+            - [ ] 技術的な記述が正確か
+            - [ ] コード例が動作するか
+            - [ ] コマンド例が実行可能か
+            - [ ] リンク切れがないか
+
+            ##### 4. 可読性
+            - [ ] 日本語が自然で読みやすいか
+            - [ ] 専門用語が適切に説明されているか
+            - [ ] 箇条書きや表が適切に使用されているか
+            - [ ] コードブロックに適切な言語指定があるか
+
+            ##### 5. 網羅性
+            - [ ] 必要な情報がすべて記載されているか
+            - [ ] 実装例が十分に示されているか
+            - [ ] エッジケースや注意事項が記載されているか
+
+            ##### 6. CLAUDE.mdとの整合性
+            - [ ] CLAUDE.mdの参照先が正しいか
+            - [ ] 新規ドキュメントがCLAUDE.mdから参照されているか（必要に応じて）
+
+            ### ステップ5: レビュー結果の出力
+
+            #### レビュー完了条件（問題なしと判定する基準）
+
+            以下の条件を**すべて満たす場合のみ**「✅ レビュー完了。問題なし。」と明記してください:
+
+            - [ ] ドキュメント間の整合性が取れている
+            - [ ] 内容が正確で誤記がない
+            - [ ] 可読性が高く理解しやすい
+            - [ ] 必要な情報が網羅されている
+            - [ ] Markdownフォーマットが正しい
+            - [ ] リンク切れがない
+
+            #### レビューフィードバック形式
+
+            **重要: 調査・確認の結果「問題なし」と判断した項目は、レビューコメントに含めないでください。**
+            **実際に修正が必要な指摘事項、または改善提案がある項目のみを出力してください。**
+
+            ##### 必須修正事項（優先度: 高）
+            問題点と具体的な修正方法を記載してください。
+
+            ##### 推奨改善事項（優先度: 中）
+            より良い記述方法があれば提案してください。
+
+            ##### 軽微な提案（優先度: 低）
+            typo、表現の改善など、内容に影響しない軽微な提案。
+
+            ##### 良い点
+            良いドキュメント構成や記述については積極的に評価してください。
+
+            #### 重要な注意事項
+
+            - **必ず日本語でフィードバックする**
+            - **具体的で建設的な提案をする**
+            - **同じ指摘を繰り返さない**
+            - **調査した結果「問題なし」と判断した項目は出力しない**
+
+            ---
+
+            ## ⚙️ バックエンドレビュー
+
+            **注**: バックエンドファイル（backend/**）に変更がある場合のみ、以下のレビューを実施してください。変更がない場合はこのセクション全体をスキップしてください。
+
+            ### ステップ1: ドキュメント精査（必須）
+
+            以下のドキュメントを**必ず順番に読み込み、内容を理解してから**レビューを開始してください。
+
+            【必須参照ドキュメント（この順で読む）】
+            1. `docs/development/coding-rules/backend-rules.md` - バックエンド規約（存在する場合）
+            2. `docs/01_要件定義/概念データモデル.md` - データベース設計
+            3. `docs/01_要件定義/非機能要件.md` - 非機能要件
+
+            ### ステップ2: レビュー実施
+
+            #### 重点確認事項（バックエンド特化）
+
+            ##### 1. コーディング規約
+            - [ ] パッケージ構成が規約に従っているか
+            - [ ] 命名規則に従っているか
+            - [ ] Lombokアノテーションを適切に使用しているか
+
+            ##### 2. Spring Boot規約
+            - [ ] @RestController/@Service/@Repositoryを適切に使用しているか
+            - [ ] コンストラクタインジェクションを使用しているか
+            - [ ] @Transactionalを適切に使用しているか
+
+            ##### 3. エラーハンドリング
+            - [ ] ビジネス例外とシステム例外を適切に分離しているか
+            - [ ] 適切なHTTPステータスコードを返しているか
+
+            ##### 4. セキュリティ
+            - [ ] パスワード等の機密情報を適切に扱っているか
+            - [ ] SQLインジェクション対策がされているか
+
+            #### レビューフィードバック形式
+
+            **重要: 調査・確認の結果「問題なし」と判断した項目は出力しないでください。**
+
+            ---
+
+            ## 🎨 フロントエンドレビュー
+
+            **注**: フロントエンドファイル（frontend/**）に変更がある場合のみ、以下のレビューを実施してください。変更がない場合はこのセクション全体をスキップしてください。
+
+            ### ステップ1: ドキュメント精査（必須）
+
+            以下のドキュメントを**必ず順番に読み込み、内容を理解してから**レビューを開始してください。
+
+            【必須参照ドキュメント（この順で読む）】
+            1. `docs/development/coding-rules/frontend-rules.md` - フロントエンド規約（存在する場合）
+            2. `docs/development/coding-rules/common-rules.md` - 共通コーディング規約（存在する場合）
+
+            ### ステップ2: レビュー実施
+
+            #### 重点確認事項（フロントエンド特化）
+
+            ##### 1. TypeScript基本規約
+            - [ ] TypeScript strictモードでエラーが出ないか
+            - [ ] any型を使用していないか
+            - [ ] 命名規則に従っているか
+
+            ##### 2. React Hooks規約
+            - [ ] Hooks呼び出しがトップレベルのみか
+            - [ ] 依存配列を正確に指定しているか
+
+            ##### 3. Next.js App Router規約
+            - [ ] Server/Client Componentを適切に選択しているか
+            - [ ] 'use client'ディレクティブの要否が正しく判断されているか
+
+            ##### 4. スタイリング
+            - [ ] Tailwind CSSクラスで統一されているか
+            - [ ] インラインスタイルを使用していないか
+
+            #### レビューフィードバック形式
+
+            **重要: 調査・確認の結果「問題なし」と判断した項目は出力しないでください。**
+
+            ---
+
+            ## 📊 レビュー完了
+
+            上記のすべてのレビューセクションを確認し、総合評価を記載してください。
+
+          use_sticky_comment: true
+          allowed_tools: "Bash(./gradlew test),Bash(./gradlew check),Bash(./gradlew checkstyleMain),Bash(./gradlew checkstyleTest),Bash(cd frontend && pnpm run lint:check),Bash(cd frontend && pnpm run test:ci),Bash(cd frontend && pnpm run build)"
