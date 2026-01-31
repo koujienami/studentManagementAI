@@ -1,0 +1,94 @@
+# Cursor Rules - 受講生管理システム
+
+## プロジェクト概要
+
+受講生管理システムの開発プロジェクト。
+- フロントエンド: Next.js
+- バックエンド: Java (Spring Boot)
+- データベース: PostgreSQL
+- ホスティング: Railway
+- CI/CD: GitHub Actions
+
+## ブランチ運用ルール【必須】
+
+### 開発作業時の原則
+
+1. **メインブランチ（main）での直接作業は禁止**
+2. **開発作業は必ず新規ブランチで実施する**
+3. **ブランチ作成時は必ずIssueとセットで作成する**
+
+### ブランチ作成手順
+
+```bash
+# 1. まずIssueを作成
+gh issue create --title "タイトル" --body "説明"
+
+# 2. Issue番号を確認（例: #123）
+gh issue list
+
+# 3. ブランチを作成（Issue番号を含める）
+git checkout -b feature/123-description
+```
+
+### ブランチ命名規則
+
+```
+{タイプ}/{Issue番号}-{説明}
+```
+
+- `feature/123-add-student-list` - 新機能
+- `fix/456-fix-login-error` - バグ修正
+- `docs/789-update-requirements` - ドキュメント
+- `chore/101-update-dependencies` - 設定・保守
+
+### PRとIssueの連携
+
+- PRタイトルにIssue番号を含める: `feat: 機能実装 (#123)`
+- PRがマージされると関連Issueが自動クローズ
+
+## コミットメッセージ規則
+
+Conventional Commits形式を使用:
+
+```
+{タイプ}: {説明} (#{Issue番号})
+```
+
+例:
+- `feat: 受講生一覧APIを実装 (#123)`
+- `fix: 認証エラーを修正 (#456)`
+- `docs: システム概要を更新 (#789)`
+
+## プロジェクト構成
+
+```
+docs/01_要件定義/     # 要件定義ドキュメント
+backend/              # バックエンド（将来）
+frontend/             # フロントエンド（将来）
+.github/workflows/    # GitHub Actions
+CLAUDE.md             # Claude Code用ルール
+```
+
+## 参照ドキュメント
+
+要件定義ドキュメントは `docs/01_要件定義/` に配置:
+- システム概要.md
+- 機能要件.md
+- 非機能要件.md
+- ユースケース.md
+- 画面一覧.md
+- 要望一覧.md
+- 概念データモデル.md
+
+## 注意事項
+
+- 秘密情報はコミットしない（.envファイルは.gitignoreに含まれている）
+- PRを作成する前にローカルでテストを実行する
+- レビューコメントには必ず対応する
+
+## 言語
+
+- コード: 英語
+- コメント: 日本語可
+- ドキュメント: 日本語
+- コミットメッセージ: 日本語可（タイプは英語）

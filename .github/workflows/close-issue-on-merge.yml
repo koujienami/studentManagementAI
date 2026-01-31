@@ -1,0 +1,72 @@
+name: Close Issue on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  close-issue:
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true
+    permissions:
+      issues: write
+      pull-requests: read
+
+    steps:
+      - name: Extract issue number from branch name
+        id: extract-issue
+        run: |
+          BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
+          echo "Branch name: $BRANCH_NAME"
+          
+          # ブランチ名パターン: feature/123-description or fix/123-description
+          if [[ "$BRANCH_NAME" =~ ^(feature|fix|hotfix|docs|chore)/([0-9]+) ]]; then
+            ISSUE_NUMBER="${BASH_REMATCH[2]}"
+            echo "issue_number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+            echo "Found issue number: $ISSUE_NUMBER"
+          else
+            echo "No issue number found in branch name"
+            echo "issue_number=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Close related issue
+        if: steps.extract-issue.outputs.issue_number != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = ${{ steps.extract-issue.outputs.issue_number }};
+            const prNumber = ${{ github.event.pull_request.number }};
+            const prTitle = `${{ github.event.pull_request.title }}`;
+            
+            try {
+              // Issueにコメントを追加
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: `✅ このIssueはPR #${prNumber} (${prTitle}) のマージにより自動的にクローズされました。`
+              });
+              
+              // Issueをクローズ
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                state: 'closed',
+                state_reason: 'completed'
+              });
+              
+              console.log(`Issue #${issueNumber} has been closed.`);
+            } catch (error) {
+              console.log(`Failed to close issue #${issueNumber}: ${error.message}`);
+              // Issueが存在しない場合などはエラーにしない
+            }
+
+      - name: Log result
+        run: |
+          if [ -n "${{ steps.extract-issue.outputs.issue_number }}" ]; then
+            echo "✅ Issue #${{ steps.extract-issue.outputs.issue_number }} was processed"
+          else
+            echo "ℹ️ No issue to close (branch name doesn't contain issue number)"
+          fi
