@@ -5,7 +5,7 @@ server:
 spring:
   # データソース設定（docker-compose使用）
   datasource:
-    url: jdbc:postgresql://localhost:5432/student_management
+    url: jdbc:postgresql://localhost:5433/student_management
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
