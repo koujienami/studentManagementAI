@@ -11,6 +11,8 @@
 
 # ソースコード
 *.java text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
 *.ts text eol=lf
 *.tsx text eol=lf
 *.js text eol=lf
@@ -32,6 +34,7 @@ docker-compose*.yml text eol=lf
 # シェルスクリプト（必ずLF）
 *.sh text eol=lf
 *.bash text eol=lf
+gradlew text eol=lf
 
 # バッチファイル（Windowsなので CRLF）
 *.bat text eol=crlf

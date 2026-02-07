@@ -1,0 +1,23 @@
+# 受講生管理システム - ステージング/開発サーバー環境設定
+server:
+  port: ${PORT:8080}
+
+spring:
+  # データソース設定（環境変数から取得）
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+# JWT設定（環境変数から取得）
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+
+# ログ設定
+logging:
+  level:
+    root: INFO
+    com.student.management: DEBUG
+    org.springframework.security: INFO
+    org.mybatis: DEBUG

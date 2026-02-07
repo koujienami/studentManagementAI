@@ -1,0 +1,31 @@
+# 受講生管理システム - 本番環境設定
+server:
+  port: ${PORT:8080}
+
+spring:
+  # データソース設定（環境変数から取得）
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  # HikariCP接続プール設定（本番用最適化）
+  datasource.hikari:
+    maximum-pool-size: 10
+    minimum-idle: 5
+    connection-timeout: 30000
+    idle-timeout: 600000
+    max-lifetime: 1800000
+
+# JWT設定（環境変数から取得）
+jwt:
+  secret-key: ${JWT_SECRET_KEY}
+
+# ログ設定（本番用：INFO以上のみ）
+logging:
+  level:
+    root: WARN
+    com.student.management: INFO
+    org.springframework.security: WARN
+    org.mybatis: WARN
