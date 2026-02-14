@@ -1,5 +1,12 @@
 import axios from 'axios';
-import { API_BASE_URL, STORAGE_KEYS } from '@/constants';
+import { API_BASE_URL } from '@/constants';
+import {
+  getAccessToken,
+  getRefreshToken,
+  setAccessToken,
+  setRefreshToken,
+  clearTokens,
+} from '@/lib/auth/token';
 
 /**
  * Axios インスタンス
@@ -18,7 +25,7 @@ const apiClient = axios.create({
 // リクエストインターセプター: アクセストークンを自動付与
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const token = getAccessToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -69,7 +76,7 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+        const refreshToken = getRefreshToken();
         if (!refreshToken) {
           throw new Error('リフレッシュトークンがありません');
         }
@@ -79,8 +86,8 @@ apiClient.interceptors.response.use(
         });
 
         const { accessToken, refreshToken: newRefreshToken } = response.data;
-        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
-        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+        setAccessToken(accessToken);
+        setRefreshToken(newRefreshToken);
 
         processQueue(null, accessToken);
 
@@ -89,8 +96,7 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         // トークンリフレッシュ失敗時はログアウト
-        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        clearTokens();
         window.location.href = '/login';
         return Promise.reject(refreshError);
       } finally {

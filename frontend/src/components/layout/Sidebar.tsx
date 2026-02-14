@@ -1,13 +1,14 @@
 import { NavLink } from 'react-router';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import type { Role } from '@/types';
 
 /** サイドバーのナビゲーション項目 */
 interface NavItem {
   label: string;
   to: string;
   /** 表示を許可するロール（省略時は全ロール） */
-  roles?: string[];
+  roles?: Role[];
 }
 
 const navItems: NavItem[] = [

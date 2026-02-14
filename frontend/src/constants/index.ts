@@ -2,6 +2,8 @@
 // 定数定義
 // ========================================
 
+import type { StudentStatus, CourseStatus, PaymentStatus } from '@/types';
+
 /** API ベース URL */
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
@@ -40,7 +42,7 @@ export const ROUTES = {
 } as const;
 
 /** 受講生の状態ラベル */
-export const STUDENT_STATUS_LABELS: Record<string, string> = {
+export const STUDENT_STATUS_LABELS: Record<StudentStatus, string> = {
   PROVISIONAL: '仮登録',
   PRE_HEARING: 'ヒアリング前',
   POST_HEARING: 'ヒアリング後',
@@ -50,7 +52,7 @@ export const STUDENT_STATUS_LABELS: Record<string, string> = {
 } as const;
 
 /** コースの状態ラベル */
-export const COURSE_STATUS_LABELS: Record<string, string> = {
+export const COURSE_STATUS_LABELS: Record<CourseStatus, string> = {
   RECRUITING: '募集中',
   ONGOING: '開講中',
   FULL: '満席',
@@ -58,7 +60,7 @@ export const COURSE_STATUS_LABELS: Record<string, string> = {
 } as const;
 
 /** 決済の状態ラベル */
-export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   UNPAID: '未払い',
   PAID: '入金済み',
 } as const;
