@@ -66,10 +66,12 @@ jobs:
 
       - name: Run Claude Code Review
         id: claude-review
-        uses: anthropics/claude-code-action@beta
+        uses: anthropics/claude-code-action@v1
         with:
-          model: "claude-opus-4-5-20251101"
-          direct_prompt: |
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          use_sticky_comment: true
+          claude_args: "--model claude-opus-4-5-20251101 --allowedTools Bash(./gradlew test) Bash(./gradlew check) Bash(./gradlew checkstyleMain) Bash(./gradlew checkstyleTest) Bash(cd frontend && npm run lint) Bash(cd frontend && npm run build)"
+          prompt: |
             # 統合レビュー実施
 
             このPRで変更されたファイルを確認し、以下の領域のうち該当するもののみレビューを実施してください：
@@ -256,9 +258,10 @@ jobs:
             - [ ] Hooks呼び出しがトップレベルのみか
             - [ ] 依存配列を正確に指定しているか
 
-            ##### 3. Next.js App Router規約
-            - [ ] Server/Client Componentを適切に選択しているか
-            - [ ] 'use client'ディレクティブの要否が正しく判断されているか
+            ##### 3. コンポーネント設計
+            - [ ] コンポーネントの責務が明確か
+            - [ ] 適切にコンポーネントが分割されているか
+            - [ ] propsの型定義が適切か
 
             ##### 4. スタイリング
             - [ ] Tailwind CSSクラスで統一されているか
@@ -273,6 +276,3 @@ jobs:
             ## 📊 レビュー完了
 
             上記のすべてのレビューセクションを確認し、総合評価を記載してください。
-
-          use_sticky_comment: true
-          allowed_tools: "Bash(./gradlew test),Bash(./gradlew check),Bash(./gradlew checkstyleMain),Bash(./gradlew checkstyleTest),Bash(cd frontend && pnpm run lint:check),Bash(cd frontend && pnpm run test:ci),Bash(cd frontend && pnpm run build)"
