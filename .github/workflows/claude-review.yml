@@ -70,7 +70,9 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           use_sticky_comment: true
-          claude_args: "--model claude-opus-4-6 --allowedTools Bash(./gradlew test) Bash(./gradlew check) Bash(./gradlew checkstyleMain) Bash(./gradlew checkstyleTest) Bash(cd frontend && npm run lint) Bash(cd frontend && npm run build)"
+          claude_args: |
+            --model claude-opus-4-6
+            --allowedTools "Bash(./gradlew test),Bash(./gradlew check),Bash(./gradlew checkstyleMain),Bash(./gradlew checkstyleTest),Bash(cd frontend && npm run lint),Bash(cd frontend && npm run build)"
           prompt: |
             # 統合レビュー実施
 
