@@ -98,7 +98,7 @@ studentManagementAI/
 │       ├── 要望一覧.md
 │       └── 概念データモデル.md
 ├── backend/                       # バックエンド（Java/Spring Boot）※将来
-├── frontend/                      # フロントエンド（Next.js）※将来
+├── frontend/                      # フロントエンド（React + Vite）
 ├── .github/
 │   └── workflows/
 │       ├── claude-review.yml     # Claude自動レビュー
@@ -112,7 +112,7 @@ studentManagementAI/
 
 | 領域 | 技術 |
 |------|------|
-| フロントエンド | Next.js |
+| フロントエンド | React + Vite + TypeScript |
 | バックエンド | Java (Spring Boot) |
 | データベース | PostgreSQL |
 | ホスティング | Railway |
