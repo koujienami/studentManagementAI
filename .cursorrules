@@ -3,7 +3,7 @@
 ## プロジェクト概要
 
 受講生管理システムの開発プロジェクト。
-- フロントエンド: Next.js
+- フロントエンド: React + Vite + TypeScript
 - バックエンド: Java (Spring Boot)
 - データベース: PostgreSQL
 - ホスティング: Railway
@@ -64,7 +64,7 @@ Conventional Commits形式を使用:
 ```
 docs/01_要件定義/     # 要件定義ドキュメント
 backend/              # バックエンド（将来）
-frontend/             # フロントエンド（将来）
+frontend/             # フロントエンド（React + Vite）
 .github/workflows/    # GitHub Actions
 CLAUDE.md             # Claude Code用ルール
 ```

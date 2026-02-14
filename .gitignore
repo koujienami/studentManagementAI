@@ -14,6 +14,14 @@ Thumbs.db
 # ログ
 *.log
 
-# 依存関係（後で追加）
-# node_modules/
-# target/
+# Node.js
+node_modules/
+
+# Vite
+dist/
+
+# Java / Gradle
+target/
+build/
+bin/
+.gradle/
