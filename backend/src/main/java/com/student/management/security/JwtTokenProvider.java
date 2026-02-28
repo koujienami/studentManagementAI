@@ -94,18 +94,6 @@ public class JwtTokenProvider {
         }
     }
 
-    public String getUsername(String token) {
-        return parseClaims(token).getSubject();
-    }
-
-    public String getRole(String token) {
-        return parseClaims(token).get("role", String.class);
-    }
-
-    public Long getUserId(String token) {
-        return parseClaims(token).get("userId", Long.class);
-    }
-
     private Claims parseClaims(String token) {
         return Jwts.parser()
                 .verifyWith(signingKey)
