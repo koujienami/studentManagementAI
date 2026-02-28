@@ -75,6 +75,7 @@ jobs:
           show_full_output: true
           claude_args: |
             --model claude-opus-4-6
+            --max-turns 50
             --allowedTools "Bash(./gradlew test),Bash(./gradlew check),Bash(./gradlew checkstyleMain),Bash(./gradlew checkstyleTest),Bash(cd frontend && npm run lint),Bash(cd frontend && npm run build)"
           prompt: |
             # 統合レビュー実施
@@ -87,6 +88,12 @@ jobs:
             変更があった領域について、対応するセクションでレビューを実施してください。
             変更がない領域はスキップし、そのセクションは出力しないでください。
             各レビューは独立したセクションとして、見出し（## 📄 ドキュメントレビュー など）で明確に区切ってください。
+
+            【重要: 指摘の網羅性について】
+            - 発見したすべての指摘事項を**1回のレビューで漏れなく出力**してください。件数の制限はありません。
+            - 指摘が10件、20件、それ以上になっても構いません。**件数を理由に指摘を省略・先送りしないでください。**
+            - 「次回以降に指摘する」「残りは別途」といった分割出力は禁止です。
+            - すべてのドキュメントを読み込んだ後、変更ファイルに対するレビューを一括で実施し、結果をまとめて出力してください。
 
             ---
 
