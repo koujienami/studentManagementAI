@@ -1,7 +1,6 @@
 package com.student.management.security;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -62,9 +61,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.warn("無効なアクセストークンによるリクエスト: URI={}, RemoteAddr={}",
                             request.getRequestURI(), request.getRemoteAddr());
                 }
-            } catch (JwtException | IllegalArgumentException e) {
-                log.warn("無効なJWTトークン: URI={}, Error={}",
-                        request.getRequestURI(), e.getMessage());
             } catch (UsernameNotFoundException e) {
                 log.warn("トークンのユーザーがDB上に存在しない: URI={}",
                         request.getRequestURI());
