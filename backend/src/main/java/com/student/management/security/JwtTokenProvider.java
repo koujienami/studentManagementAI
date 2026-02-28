@@ -62,14 +62,6 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public boolean validateAccessToken(String token) {
-        return validateAndGetAccessClaims(token).isPresent();
-    }
-
-    public boolean validateRefreshToken(String token) {
-        return validateAndGetRefreshClaims(token).isPresent();
-    }
-
     public Optional<Claims> validateAndGetRefreshClaims(String token) {
         try {
             Claims claims = parseClaims(token);
