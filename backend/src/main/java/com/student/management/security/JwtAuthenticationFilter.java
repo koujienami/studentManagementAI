@@ -1,5 +1,6 @@
 package com.student.management.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -41,20 +43,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = resolveToken(request);
 
         if (token != null) {
-            if (jwtTokenProvider.validateAccessToken(token)) {
-                String username = jwtTokenProvider.getUsername(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            try {
+                Optional<Claims> claimsOpt = jwtTokenProvider.validateAndGetAccessClaims(token);
+                if (claimsOpt.isPresent()) {
+                    String username = claimsOpt.get().getSubject();
+                    UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                userDetails, null, userDetails.getAuthorities());
-                authentication.setDetails(
-                        new WebAuthenticationDetailsSource().buildDetails(request));
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails, null, userDetails.getAuthorities());
+                    authentication.setDetails(
+                            new WebAuthenticationDetailsSource().buildDetails(request));
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-            } else {
-                log.warn("無効なアクセストークンによるリクエスト: URI={}, RemoteAddr={}",
-                        request.getRequestURI(), request.getRemoteAddr());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    log.warn("無効なアクセストークンによるリクエスト: URI={}, RemoteAddr={}",
+                            request.getRequestURI(), request.getRemoteAddr());
+                }
+            } catch (Exception e) {
+                log.warn("JWT認証処理でエラーが発生: URI={}, Error={}",
+                        request.getRequestURI(), e.getMessage());
             }
         }
 

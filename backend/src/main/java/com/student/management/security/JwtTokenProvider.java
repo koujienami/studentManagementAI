@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.Optional;
 
 @Component
 public class JwtTokenProvider {
@@ -62,20 +63,28 @@ public class JwtTokenProvider {
     }
 
     public boolean validateAccessToken(String token) {
-        return validateTokenWithType(token, TOKEN_TYPE_ACCESS);
+        return validateAndGetAccessClaims(token).isPresent();
     }
 
     public boolean validateRefreshToken(String token) {
         return validateTokenWithType(token, TOKEN_TYPE_REFRESH);
     }
 
+    public Optional<Claims> validateAndGetAccessClaims(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            if (TOKEN_TYPE_ACCESS.equals(claims.get(CLAIM_TOKEN_TYPE, String.class))) {
+                return Optional.of(claims);
+            }
+            return Optional.empty();
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
     private boolean validateTokenWithType(String token, String expectedType) {
         try {
-            Claims claims = Jwts.parser()
-                    .verifyWith(signingKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
+            Claims claims = parseClaims(token);
             return expectedType.equals(claims.get(CLAIM_TOKEN_TYPE, String.class));
         } catch (JwtException | IllegalArgumentException e) {
             return false;
