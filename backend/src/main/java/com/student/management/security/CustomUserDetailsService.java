@@ -20,7 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userMapper.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException(
-                        "ユーザーが見つかりません: " + username));
+                        "ユーザーが見つかりません"));
         return new CustomUserDetails(user);
     }
 }

@@ -14,6 +14,11 @@ spring:
 jwt:
   secret-key: ${JWT_SECRET_KEY}
 
+# CORS設定（環境変数から取得）
+cors:
+  allowed-origins:
+    - ${CORS_ALLOWED_ORIGIN}
+
 # ログ設定
 logging:
   level:

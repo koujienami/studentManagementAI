@@ -9,18 +9,22 @@ spring:
     username: ${DATABASE_USERNAME}
     password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
-
-  # HikariCP接続プール設定（本番用最適化）
-  datasource.hikari:
-    maximum-pool-size: 10
-    minimum-idle: 5
-    connection-timeout: 30000
-    idle-timeout: 600000
-    max-lifetime: 1800000
+    # HikariCP接続プール設定（本番用最適化）
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
 
 # JWT設定（環境変数から取得）
 jwt:
   secret-key: ${JWT_SECRET_KEY}
+
+# CORS設定（環境変数から取得）
+cors:
+  allowed-origins:
+    - ${CORS_ALLOWED_ORIGIN}
 
 # ログ設定（本番用：INFO以上のみ）
 logging:
