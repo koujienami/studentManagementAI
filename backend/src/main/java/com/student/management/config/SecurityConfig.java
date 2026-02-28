@@ -50,7 +50,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/apply/**", "/api/hearing/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/**").authenticated()
-                        .anyRequest().permitAll()
+                        .anyRequest().denyAll()
                 )
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);

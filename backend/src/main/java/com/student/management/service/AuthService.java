@@ -6,6 +6,7 @@ import com.student.management.entity.User;
 import com.student.management.exception.ApiException;
 import com.student.management.repository.UserMapper;
 import com.student.management.security.JwtTokenProvider;
+import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -54,12 +55,11 @@ public class AuthService {
     }
 
     public TokenResponse refresh(String refreshToken) {
-        if (!jwtTokenProvider.validateRefreshToken(refreshToken)) {
-            throw new ApiException(
-                    HttpStatus.UNAUTHORIZED, "リフレッシュトークンが無効です");
-        }
+        Claims claims = jwtTokenProvider.validateAndGetRefreshClaims(refreshToken)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.UNAUTHORIZED, "リフレッシュトークンが無効です"));
 
-        String username = jwtTokenProvider.getUsername(refreshToken);
+        String username = claims.getSubject();
         User user = userMapper.findByUsername(username)
                 .orElseThrow(() -> new ApiException(
                         HttpStatus.UNAUTHORIZED, "ユーザーが見つかりません"));

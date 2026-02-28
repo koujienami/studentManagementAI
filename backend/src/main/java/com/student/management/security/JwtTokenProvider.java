@@ -67,7 +67,19 @@ public class JwtTokenProvider {
     }
 
     public boolean validateRefreshToken(String token) {
-        return validateTokenWithType(token, TOKEN_TYPE_REFRESH);
+        return validateAndGetRefreshClaims(token).isPresent();
+    }
+
+    public Optional<Claims> validateAndGetRefreshClaims(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            if (TOKEN_TYPE_REFRESH.equals(claims.get(CLAIM_TOKEN_TYPE, String.class))) {
+                return Optional.of(claims);
+            }
+            return Optional.empty();
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 
     public Optional<Claims> validateAndGetAccessClaims(String token) {

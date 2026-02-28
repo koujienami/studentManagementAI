@@ -1,6 +1,7 @@
 package com.student.management.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,6 +12,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -60,9 +62,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.warn("無効なアクセストークンによるリクエスト: URI={}, RemoteAddr={}",
                             request.getRequestURI(), request.getRemoteAddr());
                 }
-            } catch (Exception e) {
-                log.warn("JWT認証処理でエラーが発生: URI={}, Error={}",
+            } catch (JwtException | IllegalArgumentException e) {
+                log.warn("無効なJWTトークン: URI={}, Error={}",
                         request.getRequestURI(), e.getMessage());
+            } catch (UsernameNotFoundException e) {
+                log.warn("トークンのユーザーがDB上に存在しない: URI={}",
+                        request.getRequestURI());
+            } catch (Exception e) {
+                log.error("JWT認証処理で予期しないエラー: URI={}",
+                        request.getRequestURI(), e);
+                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;
             }
         }
 
