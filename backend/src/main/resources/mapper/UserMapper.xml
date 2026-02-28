@@ -3,14 +3,18 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.student.management.repository.UserMapper">
 
+    <sql id="userColumns">
+        id, username, email, password_hash, name, role, created_at, updated_at
+    </sql>
+
     <select id="findByUsername" resultType="com.student.management.entity.User">
-        SELECT id, username, email, password_hash, name, role, created_at, updated_at
+        SELECT <include refid="userColumns"/>
         FROM users
         WHERE username = #{username}
     </select>
 
     <select id="findById" resultType="com.student.management.entity.User">
-        SELECT id, username, email, password_hash, name, role, created_at, updated_at
+        SELECT <include refid="userColumns"/>
         FROM users
         WHERE id = #{id}
     </select>

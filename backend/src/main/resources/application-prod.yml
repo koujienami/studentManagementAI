@@ -17,6 +17,11 @@ spring:
       idle-timeout: 600000
       max-lifetime: 1800000
 
+  # SQL初期化（本番では無効化、マイグレーションツールで管理）
+  sql:
+    init:
+      mode: never
+
 # JWT設定（環境変数から取得）
 jwt:
   secret-key: ${JWT_SECRET_KEY}
