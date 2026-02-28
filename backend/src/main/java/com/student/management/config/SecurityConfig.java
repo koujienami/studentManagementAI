@@ -1,5 +1,7 @@
 package com.student.management.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.student.management.dto.ErrorResponse;
 import com.student.management.security.JwtAuthenticationFilter;
 import com.student.management.security.JwtProperties;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,11 +35,14 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final CorsProperties corsProperties;
+    private final ObjectMapper objectMapper;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
-                          CorsProperties corsProperties) {
+                          CorsProperties corsProperties,
+                          ObjectMapper objectMapper) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
         this.corsProperties = corsProperties;
+        this.objectMapper = objectMapper;
     }
 
     @Bean
@@ -59,15 +64,15 @@ public class SecurityConfig {
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.setCharacterEncoding("UTF-8");
                             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                            response.getWriter().write(
-                                    "{\"status\":401,\"message\":\"認証が必要です\"}");
+                            objectMapper.writeValue(response.getWriter(),
+                                    new ErrorResponse(401, "認証が必要です"));
                         })
                         .accessDeniedHandler((request, response, accessDeniedException) -> {
                             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                             response.setCharacterEncoding("UTF-8");
                             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                            response.getWriter().write(
-                                    "{\"status\":403,\"message\":\"アクセス権限がありません\"}");
+                            objectMapper.writeValue(response.getWriter(),
+                                    new ErrorResponse(403, "アクセス権限がありません"));
                         })
                 )
                 .addFilterBefore(jwtAuthenticationFilter,
