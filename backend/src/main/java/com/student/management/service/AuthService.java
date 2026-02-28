@@ -56,8 +56,11 @@ public class AuthService {
 
     public TokenResponse refresh(String refreshToken) {
         Claims claims = jwtTokenProvider.validateAndGetRefreshClaims(refreshToken)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.UNAUTHORIZED, "リフレッシュトークンが無効です"));
+                .orElseThrow(() -> {
+                    log.warn("トークンリフレッシュ失敗（無効なリフレッシュトークン）");
+                    return new ApiException(
+                            HttpStatus.UNAUTHORIZED, "リフレッシュトークンが無効です");
+                });
 
         String username = claims.getSubject();
         User user = userMapper.findByUsername(username)
@@ -68,6 +71,7 @@ public class AuthService {
                 user.getId(), user.getUsername(), user.getRole());
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername());
 
+        log.info("トークンリフレッシュ成功: username={}", username);
         return new TokenResponse(newAccessToken, newRefreshToken);
     }
 
