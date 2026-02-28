@@ -31,7 +31,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-mail")
 
     // MyBatis
-    implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.4")
+    implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.0")
 
     // PostgreSQL
     runtimeOnly("org.postgresql:postgresql")
@@ -51,7 +51,7 @@ dependencies {
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
-    testImplementation("org.mybatis.spring.boot:mybatis-spring-boot-starter-test:3.0.4")
+    testImplementation("org.mybatis.spring.boot:mybatis-spring-boot-starter-test:4.0.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
