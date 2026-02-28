@@ -150,12 +150,37 @@ CREATE TABLE IF NOT EXISTS mail_histories (
 );
 
 -- =============================================
--- インデックス
+-- updated_at 自動更新トリガー
 -- =============================================
-CREATE INDEX IF NOT EXISTS idx_users_username      ON users (username);
-CREATE INDEX IF NOT EXISTS idx_users_email         ON users (email);
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$ 
+DECLARE
+    tbl TEXT;
+BEGIN
+    FOR tbl IN 
+        SELECT table_name FROM information_schema.columns 
+        WHERE table_schema = 'public' AND column_name = 'updated_at'
+    LOOP
+        EXECUTE format(
+            'CREATE OR REPLACE TRIGGER trigger_%s_updated_at
+             BEFORE UPDATE ON %I
+             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()',
+            tbl, tbl
+        );
+    END LOOP;
+END $$;
+
+-- =============================================
+-- インデックス（UNIQUE制約による暗黙インデックスと重複するものは除外）
+-- =============================================
 CREATE INDEX IF NOT EXISTS idx_users_role          ON users (role);
-CREATE INDEX IF NOT EXISTS idx_students_email      ON students (email);
 CREATE INDEX IF NOT EXISTS idx_students_status     ON students (status);
 CREATE INDEX IF NOT EXISTS idx_students_referral   ON students (referral_source_id);
 CREATE INDEX IF NOT EXISTS idx_courses_status      ON courses (status);
