@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS payments (
 CREATE TABLE IF NOT EXISTS hearing_items (
     id            BIGSERIAL    PRIMARY KEY,
     name          VARCHAR(200) NOT NULL,
-    type          VARCHAR(30)  NOT NULL,
+    type          VARCHAR(30)  NOT NULL CHECK (type IN ('TEXT', 'SELECT', 'MULTI_SELECT')),
     required      BOOLEAN      NOT NULL DEFAULT FALSE,
     display_order INTEGER      NOT NULL,
     created_at    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,

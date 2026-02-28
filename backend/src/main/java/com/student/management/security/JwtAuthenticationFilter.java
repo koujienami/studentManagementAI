@@ -71,8 +71,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             } catch (Exception e) {
                 log.error("JWT認証処理で予期しないエラー: URI={}",
                         request.getRequestURI(), e);
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                return;
             }
         }
 

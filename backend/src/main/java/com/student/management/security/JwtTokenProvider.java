@@ -94,15 +94,6 @@ public class JwtTokenProvider {
         }
     }
 
-    private boolean validateTokenWithType(String token, String expectedType) {
-        try {
-            Claims claims = parseClaims(token);
-            return expectedType.equals(claims.get(CLAIM_TOKEN_TYPE, String.class));
-        } catch (JwtException | IllegalArgumentException e) {
-            return false;
-        }
-    }
-
     public String getUsername(String token) {
         return parseClaims(token).getSubject();
     }
