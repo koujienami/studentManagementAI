@@ -15,6 +15,11 @@ spring:
     init:
       mode: always
 
+# CORS設定（ローカル開発用）
+cors:
+  allowed-origins:
+    - http://localhost:5173
+
 # JWT設定（ローカル開発用の秘密鍵）
 jwt:
   secret-key: local-development-secret-key-do-not-use-in-production-32bytes
