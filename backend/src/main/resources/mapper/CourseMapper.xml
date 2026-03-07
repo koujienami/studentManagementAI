@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.student.management.repository.CourseMapper">
+
+    <sql id="courseColumns">
+        c.id,
+        c.name,
+        c.description,
+        c.price,
+        c.instructor_id,
+        c.created_at,
+        c.updated_at,
+        u.name AS instructor_name
+    </sql>
+
+    <select id="findAll" resultType="com.student.management.entity.CourseWithInstructor">
+        SELECT
+            <include refid="courseColumns"/>
+        FROM courses c
+        LEFT JOIN users u ON c.instructor_id = u.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    c.name ILIKE CONCAT('%', #{keyword}, '%')
+                    OR COALESCE(c.description, '') ILIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+        </where>
+        ORDER BY c.created_at DESC, c.id DESC
+    </select>
+
+    <select id="findById" resultType="com.student.management.entity.CourseWithInstructor">
+        SELECT
+            <include refid="courseColumns"/>
+        FROM courses c
+        LEFT JOIN users u ON c.instructor_id = u.id
+        WHERE c.id = #{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO courses (
+            name,
+            description,
+            price,
+            instructor_id
+        ) VALUES (
+            #{name},
+            #{description},
+            #{price},
+            #{instructorId}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE courses
+        SET
+            name = #{name},
+            description = #{description},
+            price = #{price},
+            instructor_id = #{instructorId}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM courses
+        WHERE id = #{id}
+    </delete>
+
+    <select id="existsById" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM courses WHERE id = #{id})
+    </select>
+
+    <select id="hasEnrollments" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM enrollments WHERE course_id = #{id})
+    </select>
+
+</mapper>

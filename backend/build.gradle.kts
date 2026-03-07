@@ -29,6 +29,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("org.flywaydb:flyway-database-postgresql")
 
     // MyBatis
     implementation("org.mybatis.spring.boot:mybatis-spring-boot-starter:4.0.0")

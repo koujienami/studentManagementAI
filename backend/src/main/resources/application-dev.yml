@@ -10,10 +10,9 @@ spring:
     password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-  # SQL初期化（開発サーバー用）
-  sql:
-    init:
-      mode: always
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
 
 # JWT設定（環境変数から取得）
 jwt:

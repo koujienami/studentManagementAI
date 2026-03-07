@@ -10,10 +10,9 @@ spring:
     password: postgres
     driver-class-name: org.postgresql.Driver
 
-  # SQL初期化（開発時のみ）
-  sql:
-    init:
-      mode: always
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
 
 # CORS設定（ローカル開発用）
 cors:
