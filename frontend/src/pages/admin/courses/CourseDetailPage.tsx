@@ -104,7 +104,7 @@ export function CourseDetailPage() {
             </CardContent>
           </Card>
 
-          {canManageCourses && (
+          {canDeleteCourse && (
             <Card>
               <CardHeader>
                 <CardTitle>管理操作</CardTitle>

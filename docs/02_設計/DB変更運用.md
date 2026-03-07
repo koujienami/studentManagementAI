@@ -15,9 +15,17 @@
 1. 既存テーブルの定義変更は直接 `schema.sql` を編集せず、必ず新しい migration を追加する。
 2. 参照データの固定値は migration で投入し、アプリケーションコードと ID を揃える。
 3. 破壊的変更が必要な場合は、移行 SQL とアプリケーション変更を同じPRに含める。
+4. `schema.sql` は現行スキーマの参照用として残し、Flyway 実行には使用しない。
+5. ローカル検証用ユーザーのような環境依存データは `db/local` に分離し、本番では適用しない。
 
 ## 初期マイグレーション
 - `V1__init_schema.sql`
   - 現行の基本スキーマを作成する。
 - `V2__seed_reference_data.sql`
-  - 申込経路の固定データと、ローカル検証用ユーザーを投入する。
+  - 申込経路の固定データを投入する。
+- `V3__simplify_courses.sql`
+  - 既存の開発DBを引き継ぐ際に、旧 `schema.sql` 由来の `capacity` / `status` 列を削除する。
+
+## 補足
+- `local` / `dev` 環境では `spring.flyway.locations=classpath:db/migration,classpath:db/local` とし、検証用ユーザー投入を許可する。
+- `prod` 環境では `classpath:db/migration` のみを適用し、初期ユーザーは別手段で作成する。

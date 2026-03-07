@@ -58,12 +58,12 @@ export function CourseListPage() {
     });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!courseToDelete) {
       return;
     }
 
-    await deleteMutation.mutateAsync(courseToDelete.id);
+    deleteMutation.mutate(courseToDelete.id);
   };
 
   return (

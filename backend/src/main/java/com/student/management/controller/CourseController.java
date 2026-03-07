@@ -5,6 +5,7 @@ import com.student.management.dto.course.CourseRequest;
 import com.student.management.dto.course.CourseResponse;
 import com.student.management.service.CourseService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,7 +45,7 @@ public class CourseController {
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF')")
     public ResponseEntity<CourseResponse> create(@Valid @RequestBody CourseRequest request) {
-        return ResponseEntity.ok(courseService.createCourse(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(courseService.createCourse(request));
     }
 
     @PutMapping("/{id}")

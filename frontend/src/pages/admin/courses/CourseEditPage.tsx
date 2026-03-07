@@ -132,11 +132,11 @@ function CourseEditForm({
     },
   });
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormError('');
     setFieldErrors({});
-    await saveMutation.mutateAsync(form);
+    saveMutation.mutate(form);
   };
 
   const setValue = <K extends keyof CourseInput>(key: K, value: CourseInput[K]) => {
