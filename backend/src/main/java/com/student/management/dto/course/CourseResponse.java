@@ -1,6 +1,5 @@
 package com.student.management.dto.course;
 
-import com.student.management.entity.Course;
 import com.student.management.entity.CourseWithInstructor;
 
 import java.time.LocalDateTime;
@@ -15,19 +14,6 @@ public record CourseResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    public static CourseResponse from(Course course, String instructorName) {
-        return new CourseResponse(
-                course.getId(),
-                course.getName(),
-                course.getDescription(),
-                course.getPrice(),
-                course.getInstructorId(),
-                instructorName,
-                course.getCreatedAt(),
-                course.getUpdatedAt()
-        );
-    }
-
     public static CourseResponse from(CourseWithInstructor course) {
         return new CourseResponse(
                 course.getId(),

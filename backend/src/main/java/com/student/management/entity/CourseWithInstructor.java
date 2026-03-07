@@ -2,6 +2,8 @@ package com.student.management.entity;
 
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
 public class CourseWithInstructor {
     private Long id;
@@ -10,6 +12,6 @@ public class CourseWithInstructor {
     private Integer price;
     private Long instructorId;
     private String instructorName;
-    private java.time.LocalDateTime createdAt;
-    private java.time.LocalDateTime updatedAt;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

@@ -15,6 +15,8 @@
     </sql>
 
     <select id="findAll" resultType="com.student.management.entity.CourseWithInstructor">
+        <bind name="escapedKeyword"
+              value="keyword == null ? null : keyword.replace(&quot;\\&quot;, &quot;\\\\&quot;).replace(&quot;%&quot;, &quot;\\%&quot;).replace(&quot;_&quot;, &quot;\\_&quot;)" />
         SELECT
             <include refid="courseColumns"/>
         FROM courses c
@@ -22,8 +24,8 @@
         <where>
             <if test="keyword != null and keyword != ''">
                 AND (
-                    c.name ILIKE CONCAT('%', #{keyword}, '%')
-                    OR COALESCE(c.description, '') ILIKE CONCAT('%', #{keyword}, '%')
+                    c.name ILIKE CONCAT('%', #{escapedKeyword}, '%') ESCAPE '\'
+                    OR COALESCE(c.description, '') ILIKE CONCAT('%', #{escapedKeyword}, '%') ESCAPE '\'
                 )
             </if>
         </where>

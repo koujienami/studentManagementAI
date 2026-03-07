@@ -184,7 +184,9 @@ function CourseEditForm({
             type="number"
             min={0}
             value={form.price}
-            onChange={(event) => setValue('price', Number(event.target.value))}
+            onChange={(event) =>
+              setValue('price', event.target.value === '' ? 0 : Number(event.target.value))
+            }
             required
           />
           {fieldErrors.price && <p className="text-sm text-destructive">{fieldErrors.price}</p>}

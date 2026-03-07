@@ -110,15 +110,13 @@ export function CourseDetailPage() {
                 <CardTitle>管理操作</CardTitle>
               </CardHeader>
               <CardContent>
-                {canDeleteCourse && (
-                  <Button
-                    variant="destructive"
-                    onClick={() => setIsDeleteDialogOpen(true)}
-                    disabled={deleteMutation.isPending}
-                  >
-                    コースを削除
-                  </Button>
-                )}
+                <Button
+                  variant="destructive"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  disabled={deleteMutation.isPending}
+                >
+                  コースを削除
+                </Button>
               </CardContent>
             </Card>
           )}
