@@ -23,4 +23,11 @@
         SELECT EXISTS(SELECT 1 FROM users WHERE username = #{username})
     </select>
 
+    <select id="findByRole" resultType="com.student.management.entity.User">
+        SELECT <include refid="userColumns"/>
+        FROM users
+        WHERE role = #{role}
+        ORDER BY name ASC, id ASC
+    </select>
+
 </mapper>

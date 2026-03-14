@@ -60,9 +60,11 @@ export default function App() {
 
                 {/* コース管理 */}
                 <Route path="/courses" element={<CourseListPage />} />
-                <Route path="/courses/new" element={<CourseEditPage />} />
                 <Route path="/courses/:id" element={<CourseDetailPage />} />
-                <Route path="/courses/:id/edit" element={<CourseEditPage />} />
+                <Route element={<AuthGuard allowedRoles={['ADMIN', 'STAFF']} />}>
+                  <Route path="/courses/new" element={<CourseEditPage />} />
+                  <Route path="/courses/:id/edit" element={<CourseEditPage />} />
+                </Route>
 
                 {/* メールテンプレート管理（管理者のみ） */}
                 <Route element={<AuthGuard allowedRoles={['ADMIN']} />}>
