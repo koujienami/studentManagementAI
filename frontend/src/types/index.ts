@@ -45,10 +45,82 @@ export type StudentStatus =
   | 'COMPLETED'      // 修了
   | 'WITHDRAWN';     // 退会
 
+/** 性別 */
+export type Gender = 'MALE' | 'FEMALE' | 'OTHER';
+
 /** 決済の状態 */
 export type PaymentStatus =
   | 'UNPAID'         // 未払い
   | 'PAID';          // 入金済み
+
+/** 受講生一覧項目 */
+export interface StudentListItem {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  status: StudentStatus;
+  referralSourceId: number;
+  referralSourceName: string;
+  courseNames: string | null;
+  hasUnpaid: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 受講履歴サマリ */
+export interface StudentEnrollmentSummary {
+  id: number;
+  courseId: number;
+  courseName: string;
+  startDate: string;
+  endDate: string | null;
+  status: 'ENROLLED' | 'COMPLETED' | 'WITHDRAWN';
+}
+
+/** 決済サマリ */
+export interface StudentPaymentSummary {
+  id: number;
+  enrollmentId: number;
+  courseName: string;
+  amount: number;
+  dueDate: string;
+  paidDate: string | null;
+  status: PaymentStatus;
+}
+
+/** 受講生詳細 */
+export interface StudentDetail {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  address: string | null;
+  birthdate: string | null;
+  gender: Gender | null;
+  status: StudentStatus;
+  chatUsername: string | null;
+  referralSourceId: number;
+  referralSourceName: string;
+  referralSourceCategory: string;
+  createdAt: string;
+  updatedAt: string;
+  enrollments: StudentEnrollmentSummary[];
+  payments: StudentPaymentSummary[];
+}
+
+/** 受講生登録・更新入力 */
+export interface StudentInput {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  birthdate: string;
+  gender: Gender | '';
+  status: StudentStatus;
+  chatUsername: string;
+  referralSourceId: number | null;
+}
 
 /** コース */
 export interface Course {

@@ -54,9 +54,14 @@ export default function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
 
                 {/* 受講生管理 */}
-                <Route path="/students" element={<StudentListPage />} />
-                <Route path="/students/:id" element={<StudentDetailPage />} />
-                <Route path="/students/:id/edit" element={<StudentEditPage />} />
+                <Route element={<AuthGuard allowedRoles={['ADMIN', 'STAFF', 'INSTRUCTOR']} />}>
+                  <Route path="/students" element={<StudentListPage />} />
+                  <Route path="/students/:id" element={<StudentDetailPage />} />
+                </Route>
+                <Route element={<AuthGuard allowedRoles={['ADMIN', 'STAFF']} />}>
+                  <Route path="/students/new" element={<StudentEditPage />} />
+                  <Route path="/students/:id/edit" element={<StudentEditPage />} />
+                </Route>
 
                 {/* コース管理 */}
                 <Route path="/courses" element={<CourseListPage />} />
