@@ -66,9 +66,9 @@ export function StudentDetailPage() {
 
   const statusMutation = useMutation({
     mutationFn: (status: StudentStatus) => updateStudentStatus(studentId, status),
-    onSuccess: async (student) => {
+    onSuccess: async () => {
       setActionError('');
-      setSelectedStatus(student.status);
+      setSelectedStatus('');
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['students'] }),
         queryClient.invalidateQueries({ queryKey: ['student', studentId] }),

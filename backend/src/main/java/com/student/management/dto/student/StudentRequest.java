@@ -45,7 +45,7 @@ public record StudentRequest(
         Long referralSourceId,
 
         @Pattern(
-                regexp = "^$|^(PROVISIONAL|PRE_HEARING|POST_HEARING|ENROLLED|COMPLETED|WITHDRAWN)$",
+                regexp = "^(PROVISIONAL|PRE_HEARING|POST_HEARING|ENROLLED|COMPLETED|WITHDRAWN)$",
                 message = "状態の値が不正です"
         )
         String status
