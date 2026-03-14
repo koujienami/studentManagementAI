@@ -1,5 +1,5 @@
 import apiClient from '@/lib/api/client';
-import type { StudentDetail, StudentInput, StudentListItem, StudentStatus } from '@/types';
+import type { PaginatedResponse, StudentDetail, StudentInput, StudentListItem, StudentStatus } from '@/types';
 
 export interface StudentListParams {
   keyword?: string;
@@ -7,16 +7,20 @@ export interface StudentListParams {
   referralSourceId?: number | null;
   hasUnpaid?: boolean | null;
   courseId?: number | null;
+  page?: number;
+  size?: number;
 }
 
 export async function fetchStudents(params: StudentListParams = {}) {
-  const response = await apiClient.get<StudentListItem[]>('/students', {
+  const response = await apiClient.get<PaginatedResponse<StudentListItem>>('/students', {
     params: {
       keyword: params.keyword || undefined,
       status: params.status || undefined,
       referralSourceId: params.referralSourceId ?? undefined,
       hasUnpaid: params.hasUnpaid ?? undefined,
       courseId: params.courseId ?? undefined,
+      page: params.page ?? undefined,
+      size: params.size ?? undefined,
     },
   });
   return response.data;

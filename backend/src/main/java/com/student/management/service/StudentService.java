@@ -1,5 +1,6 @@
 package com.student.management.service;
 
+import com.student.management.dto.PaginatedResponse;
 import com.student.management.dto.student.StudentDetailResponse;
 import com.student.management.dto.student.StudentEnrollmentSummaryResponse;
 import com.student.management.dto.student.StudentListItemResponse;
@@ -27,6 +28,9 @@ import java.util.Set;
 public class StudentService {
 
     private static final String ROLE_INSTRUCTOR = "INSTRUCTOR";
+    private static final int DEFAULT_PAGE = 1;
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
     private static final String STATUS_PROVISIONAL = "PROVISIONAL";
     private static final String STATUS_PRE_HEARING = "PRE_HEARING";
     private static final String STATUS_POST_HEARING = "POST_HEARING";
@@ -50,24 +54,42 @@ public class StudentService {
         this.referralSourceMapper = referralSourceMapper;
     }
 
-    public List<StudentListItemResponse> getStudents(String keyword,
-                                                     String status,
-                                                     Long referralSourceId,
-                                                     Boolean hasUnpaid,
-                                                     Long courseId) {
+    public PaginatedResponse<StudentListItemResponse> getStudents(String keyword,
+                                                                  String status,
+                                                                  Long referralSourceId,
+                                                                  Boolean hasUnpaid,
+                                                                  Long courseId,
+                                                                  Integer page,
+                                                                  Integer size) {
         CurrentUser currentUser = getCurrentUser();
         Long instructorId = currentUser.isInstructor() ? currentUser.id() : null;
+        int normalizedPage = normalizePage(page);
+        int normalizedSize = normalizeSize(size);
+        int offset = (normalizedPage - 1) * normalizedSize;
+        long totalElements = studentMapper.countAll(
+                normalize(keyword),
+                normalize(status),
+                referralSourceId,
+                hasUnpaid,
+                courseId,
+                instructorId
+        );
 
-        return studentMapper.findAll(
-                        normalize(keyword),
-                        normalize(status),
-                        referralSourceId,
-                        hasUnpaid,
-                        courseId,
-                        instructorId
-                ).stream()
+        List<StudentListItemResponse> content = studentMapper.findAll(
+                normalize(keyword),
+                normalize(status),
+                referralSourceId,
+                hasUnpaid,
+                courseId,
+                instructorId,
+                normalizedSize,
+                offset
+        ).stream()
                 .map(student -> toListItemResponse(student, currentUser.isInstructor()))
                 .toList();
+
+        int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / normalizedSize);
+        return new PaginatedResponse<>(content, totalElements, totalPages, normalizedPage, normalizedSize);
     }
 
     public StudentDetailResponse getStudent(Long id) {
@@ -81,7 +103,9 @@ public class StudentService {
                 .map(StudentEnrollmentSummaryResponse::from)
                 .toList();
 
-        List<StudentPaymentSummaryResponse> payments = studentMapper.findPaymentSummaries(id).stream()
+        List<StudentPaymentSummaryResponse> payments = currentUser.isInstructor()
+                ? List.of()
+                : studentMapper.findPaymentSummaries(id).stream()
                 .map(StudentPaymentSummaryResponse::from)
                 .toList();
 
@@ -184,6 +208,20 @@ public class StudentService {
         }
 
         return normalizedStatus;
+    }
+
+    private int normalizePage(Integer page) {
+        if (page == null || page < 1) {
+            return DEFAULT_PAGE;
+        }
+        return page;
+    }
+
+    private int normalizeSize(Integer size) {
+        if (size == null || size < 1) {
+            return DEFAULT_PAGE_SIZE;
+        }
+        return Math.min(size, MAX_PAGE_SIZE);
     }
 
     private boolean isTransitionAllowed(String currentStatus, String nextStatus) {

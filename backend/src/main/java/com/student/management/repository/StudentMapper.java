@@ -19,7 +19,16 @@ public interface StudentMapper {
                                   @Param("referralSourceId") Long referralSourceId,
                                   @Param("hasUnpaid") Boolean hasUnpaid,
                                   @Param("courseId") Long courseId,
-                                  @Param("instructorId") Long instructorId);
+                                  @Param("instructorId") Long instructorId,
+                                  @Param("limit") int limit,
+                                  @Param("offset") int offset);
+
+    long countAll(@Param("keyword") String keyword,
+                  @Param("status") String status,
+                  @Param("referralSourceId") Long referralSourceId,
+                  @Param("hasUnpaid") Boolean hasUnpaid,
+                  @Param("courseId") Long courseId,
+                  @Param("instructorId") Long instructorId);
 
     Optional<StudentDetail> findDetailById(@Param("id") Long id,
                                            @Param("instructorId") Long instructorId);

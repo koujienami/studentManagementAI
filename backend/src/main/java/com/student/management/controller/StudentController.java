@@ -1,5 +1,6 @@
 package com.student.management.controller;
 
+import com.student.management.dto.PaginatedResponse;
 import com.student.management.dto.student.StudentDetailResponse;
 import com.student.management.dto.student.StudentListItemResponse;
 import com.student.management.dto.student.StudentRequest;
@@ -20,8 +21,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/api/students")
 public class StudentController {
@@ -34,17 +33,21 @@ public class StudentController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STAFF', 'INSTRUCTOR')")
-    public ResponseEntity<List<StudentListItemResponse>> list(@RequestParam(required = false) String keyword,
-                                                              @RequestParam(required = false) String status,
-                                                              @RequestParam(required = false) Long referralSourceId,
-                                                              @RequestParam(required = false) Boolean hasUnpaid,
-                                                              @RequestParam(required = false) Long courseId) {
+    public ResponseEntity<PaginatedResponse<StudentListItemResponse>> list(@RequestParam(required = false) String keyword,
+                                                                           @RequestParam(required = false) String status,
+                                                                           @RequestParam(required = false) Long referralSourceId,
+                                                                           @RequestParam(required = false) Boolean hasUnpaid,
+                                                                           @RequestParam(required = false) Long courseId,
+                                                                           @RequestParam(required = false) Integer page,
+                                                                           @RequestParam(required = false) Integer size) {
         return ResponseEntity.ok(studentService.getStudents(
                 keyword,
                 status,
                 referralSourceId,
                 hasUnpaid,
-                courseId
+                courseId,
+                page,
+                size
         ));
     }
 

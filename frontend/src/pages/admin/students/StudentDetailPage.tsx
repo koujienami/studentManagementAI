@@ -36,6 +36,11 @@ const STATUS_TRANSITIONS: Record<StudentStatus, StudentStatus[]> = {
   COMPLETED: [],
   WITHDRAWN: [],
 };
+const ENROLLMENT_STATUS_LABELS = {
+  ENROLLED: '受講中',
+  COMPLETED: '修了',
+  WITHDRAWN: '退会',
+} as const;
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -52,6 +57,7 @@ export function StudentDetailPage() {
   const { user } = useAuth();
   const canManageStudents = user?.role === 'ADMIN' || user?.role === 'STAFF';
   const canDeleteStudents = user?.role === 'ADMIN';
+  const canViewPayments = user?.role !== 'INSTRUCTOR';
 
   const studentId = Number(id);
   const [actionError, setActionError] = useState('');
@@ -87,6 +93,7 @@ export function StudentDetailPage() {
       navigate('/students');
     },
     onError: (error) => {
+      setIsDeleteDialogOpen(false);
       setActionError(getApiErrorMessage(error, '受講生の削除に失敗しました'));
     },
   });
@@ -242,7 +249,7 @@ export function StudentDetailPage() {
                         <TableCell>{enrollment.courseName}</TableCell>
                         <TableCell>{formatDate(enrollment.startDate)}</TableCell>
                         <TableCell>{formatDate(enrollment.endDate)}</TableCell>
-                        <TableCell>{enrollment.status}</TableCell>
+                        <TableCell>{ENROLLMENT_STATUS_LABELS[enrollment.status]}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -253,41 +260,43 @@ export function StudentDetailPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>決済サマリ</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {student.payments.length > 0 ? (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>コース</TableHead>
-                      <TableHead>金額</TableHead>
-                      <TableHead>支払期限</TableHead>
-                      <TableHead>入金日</TableHead>
-                      <TableHead>状態</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {student.payments.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell>{payment.courseName}</TableCell>
-                        <TableCell>{payment.amount.toLocaleString()}円</TableCell>
-                        <TableCell>{formatDate(payment.dueDate)}</TableCell>
-                        <TableCell>{formatDate(payment.paidDate)}</TableCell>
-                        <TableCell>
-                          <PaymentStatusBadge status={payment.status} />
-                        </TableCell>
+          {canViewPayments && (
+            <Card>
+              <CardHeader>
+                <CardTitle>決済サマリ</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {student.payments.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>コース</TableHead>
+                        <TableHead>金額</TableHead>
+                        <TableHead>支払期限</TableHead>
+                        <TableHead>入金日</TableHead>
+                        <TableHead>状態</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              ) : (
-                <p className="text-muted-foreground">決済情報はありません。</p>
-              )}
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {student.payments.map((payment) => (
+                        <TableRow key={payment.id}>
+                          <TableCell>{payment.courseName}</TableCell>
+                          <TableCell>{payment.amount.toLocaleString()}円</TableCell>
+                          <TableCell>{formatDate(payment.dueDate)}</TableCell>
+                          <TableCell>{formatDate(payment.paidDate)}</TableCell>
+                          <TableCell>
+                            <PaymentStatusBadge status={payment.status} />
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <p className="text-muted-foreground">決済情報はありません。</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {canDeleteStudents && (
             <Card>

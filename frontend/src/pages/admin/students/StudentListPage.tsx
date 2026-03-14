@@ -30,6 +30,7 @@ import { deleteStudent, fetchStudents, type StudentListParams } from '@/lib/api/
 import type { StudentStatus } from '@/types';
 
 const EMPTY_VALUE = '__ALL__';
+const PAGE_SIZE = 20;
 const UNPAID_FILTER_OPTIONS: Array<{ value: 'all' | 'true' | 'false'; label: string }> = [
   { value: 'all', label: 'すべて' },
   { value: 'true', label: '未払いあり' },
@@ -68,6 +69,8 @@ function toQueryFilters(form: StudentSearchFormState): StudentListParams {
     referralSourceId: form.referralSourceId === EMPTY_VALUE ? null : Number(form.referralSourceId),
     hasUnpaid: form.hasUnpaid === 'all' ? null : form.hasUnpaid === 'true',
     courseId: form.courseId === EMPTY_VALUE ? null : Number(form.courseId),
+    page: 1,
+    size: PAGE_SIZE,
   };
 }
 
@@ -78,7 +81,7 @@ export function StudentListPage() {
   const canDeleteStudents = user?.role === 'ADMIN';
 
   const [searchForm, setSearchForm] = useState<StudentSearchFormState>(initialSearchForm);
-  const [filters, setFilters] = useState<StudentListParams>({});
+  const [filters, setFilters] = useState<StudentListParams>({ page: 1, size: PAGE_SIZE });
   const [actionError, setActionError] = useState('');
   const [studentToDelete, setStudentToDelete] = useState<{ id: number; name: string } | null>(null);
 
@@ -108,6 +111,7 @@ export function StudentListPage() {
       ]);
     },
     onError: (error) => {
+      setStudentToDelete(null);
       setActionError(getApiErrorMessage(error, '受講生の削除に失敗しました'));
     },
   });
@@ -123,6 +127,10 @@ export function StudentListPage() {
     }
 
     deleteMutation.mutate(studentToDelete.id);
+  };
+
+  const handlePageChange = (page: number) => {
+    setFilters((prev) => ({ ...prev, page }));
   };
 
   return (
@@ -246,57 +254,85 @@ export function StudentListPage() {
             <p className="text-sm text-destructive">
               {getApiErrorMessage(studentsQuery.error, '受講生一覧の取得に失敗しました')}
             </p>
-          ) : studentsQuery.data && studentsQuery.data.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>氏名</TableHead>
-                  <TableHead>メールアドレス</TableHead>
-                  <TableHead>申込経路</TableHead>
-                  <TableHead>状態</TableHead>
-                  <TableHead>受講コース</TableHead>
-                  <TableHead>未払い</TableHead>
-                  <TableHead className="w-[180px]">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {studentsQuery.data.map((student) => (
-                  <TableRow key={student.id}>
-                    <TableCell className="font-medium">{student.name}</TableCell>
-                    <TableCell>{student.email}</TableCell>
-                    <TableCell>{student.referralSourceName}</TableCell>
-                    <TableCell>
-                      <StudentStatusBadge status={student.status} />
-                    </TableCell>
-                    <TableCell>{student.courseNames ?? '未登録'}</TableCell>
-                    <TableCell>{student.hasUnpaid ? 'あり' : 'なし'}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 whitespace-nowrap">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link to={`/students/${student.id}`}>詳細</Link>
-                        </Button>
-                        {canManageStudents && (
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/students/${student.id}/edit`}>編集</Link>
-                          </Button>
-                        )}
-                        {canDeleteStudents && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            className="ml-2"
-                            onClick={() => setStudentToDelete({ id: student.id, name: student.name })}
-                            disabled={deleteMutation.isPending}
-                          >
-                            削除
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
+          ) : studentsQuery.data && studentsQuery.data.content.length > 0 ? (
+            <>
+              <div className="flex flex-col gap-2 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
+                <p>{studentsQuery.data.totalElements.toLocaleString()}件</p>
+                <p>
+                  {studentsQuery.data.page} / {Math.max(studentsQuery.data.totalPages, 1)} ページ
+                </p>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>氏名</TableHead>
+                    <TableHead>メールアドレス</TableHead>
+                    <TableHead>申込経路</TableHead>
+                    <TableHead>状態</TableHead>
+                    <TableHead>受講コース</TableHead>
+                    <TableHead>未払い</TableHead>
+                    <TableHead className="w-[180px]">操作</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {studentsQuery.data.content.map((student) => (
+                    <TableRow key={student.id}>
+                      <TableCell className="font-medium">{student.name}</TableCell>
+                      <TableCell>{student.email}</TableCell>
+                      <TableCell>{student.referralSourceName}</TableCell>
+                      <TableCell>
+                        <StudentStatusBadge status={student.status} />
+                      </TableCell>
+                      <TableCell>{student.courseNames ?? '未登録'}</TableCell>
+                      <TableCell>{student.hasUnpaid ? 'あり' : 'なし'}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2 whitespace-nowrap">
+                          <Button variant="outline" size="sm" asChild>
+                            <Link to={`/students/${student.id}`}>詳細</Link>
+                          </Button>
+                          {canManageStudents && (
+                            <Button variant="outline" size="sm" asChild>
+                              <Link to={`/students/${student.id}/edit`}>編集</Link>
+                            </Button>
+                          )}
+                          {canDeleteStudents && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="ml-2"
+                              onClick={() => setStudentToDelete({ id: student.id, name: student.name })}
+                              disabled={deleteMutation.isPending}
+                            >
+                              削除
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handlePageChange((studentsQuery.data.page || 1) - 1)}
+                  disabled={studentsQuery.isFetching || (studentsQuery.data.page || 1) <= 1}
+                >
+                  前へ
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handlePageChange((studentsQuery.data.page || 1) + 1)}
+                  disabled={
+                    studentsQuery.isFetching ||
+                    studentsQuery.data.totalPages === 0 ||
+                    (studentsQuery.data.page || 1) >= studentsQuery.data.totalPages
+                  }
+                >
+                  次へ
+                </Button>
+              </div>
+            </>
           ) : (
             <p className="text-muted-foreground">条件に一致する受講生はありません。</p>
           )}

@@ -20,30 +20,7 @@
         s.updated_at
     </sql>
 
-    <select id="findAll" resultType="com.student.management.entity.StudentListItem">
-        <bind name="escapedKeyword"
-              value="keyword == null ? null : keyword.replace(&quot;\\&quot;, &quot;\\\\&quot;).replace(&quot;%&quot;, &quot;\\%&quot;).replace(&quot;_&quot;, &quot;\\_&quot;)" />
-        SELECT
-            s.id,
-            s.name,
-            s.email,
-            s.phone,
-            s.status,
-            s.referral_source_id,
-            rs.name AS referral_source_name,
-            STRING_AGG(DISTINCT c.name, ', ' ORDER BY c.name) FILTER (WHERE c.id IS NOT NULL) AS course_names,
-            EXISTS(
-                SELECT 1
-                FROM payments p2
-                WHERE p2.student_id = s.id
-                  AND p2.status = 'UNPAID'
-            ) AS has_unpaid,
-            s.created_at,
-            s.updated_at
-        FROM students s
-        INNER JOIN referral_sources rs ON s.referral_source_id = rs.id
-        LEFT JOIN enrollments e ON e.student_id = s.id
-        LEFT JOIN courses c ON e.course_id = c.id
+    <sql id="studentFilterWhere">
         <where>
             <if test="keyword != null and keyword != ''">
                 AND (
@@ -84,8 +61,45 @@
                 )
             </if>
         </where>
+    </sql>
+
+    <select id="findAll" resultType="com.student.management.entity.StudentListItem">
+        <bind name="escapedKeyword"
+              value="keyword == null ? null : keyword.replace(&quot;\\&quot;, &quot;\\\\&quot;).replace(&quot;%&quot;, &quot;\\%&quot;).replace(&quot;_&quot;, &quot;\\_&quot;)" />
+        SELECT
+            s.id,
+            s.name,
+            s.email,
+            s.phone,
+            s.status,
+            s.referral_source_id,
+            rs.name AS referral_source_name,
+            STRING_AGG(DISTINCT c.name, ', ' ORDER BY c.name) FILTER (WHERE c.id IS NOT NULL) AS course_names,
+            EXISTS(
+                SELECT 1
+                FROM payments p2
+                WHERE p2.student_id = s.id
+                  AND p2.status = 'UNPAID'
+            ) AS has_unpaid,
+            s.created_at,
+            s.updated_at
+        FROM students s
+        INNER JOIN referral_sources rs ON s.referral_source_id = rs.id
+        LEFT JOIN enrollments e ON e.student_id = s.id
+        LEFT JOIN courses c ON e.course_id = c.id
+        <include refid="studentFilterWhere"/>
         GROUP BY s.id, rs.name
         ORDER BY s.created_at DESC, s.id DESC
+        LIMIT #{limit}
+        OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="long">
+        <bind name="escapedKeyword"
+              value="keyword == null ? null : keyword.replace(&quot;\\&quot;, &quot;\\\\&quot;).replace(&quot;%&quot;, &quot;\\%&quot;).replace(&quot;_&quot;, &quot;\\_&quot;)" />
+        SELECT COUNT(*)
+        FROM students s
+        <include refid="studentFilterWhere"/>
     </select>
 
     <select id="findDetailById" resultType="com.student.management.entity.StudentDetail">
