@@ -9,4 +9,6 @@ import java.util.List;
 public interface ReferralSourceMapper {
 
     List<ReferralSource> findAll();
+
+    boolean existsById(Long id);
 }

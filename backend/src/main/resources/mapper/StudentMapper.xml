@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.student.management.repository.StudentMapper">
+
+    <sql id="studentDetailColumns">
+        s.id,
+        s.name,
+        s.email,
+        s.phone,
+        s.address,
+        s.birthdate,
+        s.gender,
+        s.status,
+        s.chat_username,
+        s.referral_source_id,
+        rs.name AS referral_source_name,
+        rs.category AS referral_source_category,
+        s.created_at,
+        s.updated_at
+    </sql>
+
+    <select id="findAll" resultType="com.student.management.entity.StudentListItem">
+        <bind name="escapedKeyword"
+              value="keyword == null ? null : keyword.replace(&quot;\\&quot;, &quot;\\\\&quot;).replace(&quot;%&quot;, &quot;\\%&quot;).replace(&quot;_&quot;, &quot;\\_&quot;)" />
+        SELECT
+            s.id,
+            s.name,
+            s.email,
+            s.phone,
+            s.status,
+            s.referral_source_id,
+            rs.name AS referral_source_name,
+            STRING_AGG(DISTINCT c.name, ', ' ORDER BY c.name) FILTER (WHERE c.id IS NOT NULL) AS course_names,
+            EXISTS(
+                SELECT 1
+                FROM payments p2
+                WHERE p2.student_id = s.id
+                  AND p2.status = 'UNPAID'
+            ) AS has_unpaid,
+            s.created_at,
+            s.updated_at
+        FROM students s
+        INNER JOIN referral_sources rs ON s.referral_source_id = rs.id
+        LEFT JOIN enrollments e ON e.student_id = s.id
+        LEFT JOIN courses c ON e.course_id = c.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    s.name ILIKE CONCAT('%', #{escapedKeyword}, '%') ESCAPE '\'
+                    OR s.email ILIKE CONCAT('%', #{escapedKeyword}, '%') ESCAPE '\'
+                    OR COALESCE(s.phone, '') ILIKE CONCAT('%', #{escapedKeyword}, '%') ESCAPE '\'
+                )
+            </if>
+            <if test="status != null and status != ''">
+                AND s.status = #{status}
+            </if>
+            <if test="referralSourceId != null">
+                AND s.referral_source_id = #{referralSourceId}
+            </if>
+            <if test="hasUnpaid != null">
+                AND EXISTS(
+                    SELECT 1
+                    FROM payments p3
+                    WHERE p3.student_id = s.id
+                      AND p3.status = 'UNPAID'
+                ) = #{hasUnpaid}
+            </if>
+            <if test="courseId != null">
+                AND EXISTS(
+                    SELECT 1
+                    FROM enrollments e2
+                    WHERE e2.student_id = s.id
+                      AND e2.course_id = #{courseId}
+                )
+            </if>
+            <if test="instructorId != null">
+                AND EXISTS(
+                    SELECT 1
+                    FROM enrollments e3
+                    INNER JOIN courses c3 ON e3.course_id = c3.id
+                    WHERE e3.student_id = s.id
+                      AND c3.instructor_id = #{instructorId}
+                )
+            </if>
+        </where>
+        GROUP BY s.id, rs.name
+        ORDER BY s.created_at DESC, s.id DESC
+    </select>
+
+    <select id="findDetailById" resultType="com.student.management.entity.StudentDetail">
+        SELECT
+            <include refid="studentDetailColumns"/>
+        FROM students s
+        INNER JOIN referral_sources rs ON s.referral_source_id = rs.id
+        WHERE s.id = #{id}
+        <if test="instructorId != null">
+            AND EXISTS(
+                SELECT 1
+                FROM enrollments e
+                INNER JOIN courses c ON e.course_id = c.id
+                WHERE e.student_id = s.id
+                  AND c.instructor_id = #{instructorId}
+            )
+        </if>
+    </select>
+
+    <select id="findEnrollmentSummaries" resultType="com.student.management.entity.StudentEnrollmentSummary">
+        SELECT
+            e.id,
+            e.course_id,
+            c.name AS course_name,
+            e.start_date,
+            e.end_date,
+            e.status
+        FROM enrollments e
+        INNER JOIN courses c ON e.course_id = c.id
+        WHERE e.student_id = #{studentId}
+        ORDER BY e.created_at DESC, e.id DESC
+    </select>
+
+    <select id="findPaymentSummaries" resultType="com.student.management.entity.StudentPaymentSummary">
+        SELECT
+            p.id,
+            p.enrollment_id,
+            c.name AS course_name,
+            p.amount,
+            p.due_date,
+            p.paid_date,
+            p.status
+        FROM payments p
+        INNER JOIN enrollments e ON p.enrollment_id = e.id
+        INNER JOIN courses c ON e.course_id = c.id
+        WHERE p.student_id = #{studentId}
+        ORDER BY p.created_at DESC, p.id DESC
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO students (
+            name,
+            email,
+            phone,
+            address,
+            birthdate,
+            gender,
+            status,
+            chat_username,
+            referral_source_id
+        ) VALUES (
+            #{name},
+            #{email},
+            #{phone},
+            #{address},
+            #{birthdate},
+            #{gender},
+            #{status},
+            #{chatUsername},
+            #{referralSourceId}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE students
+        SET
+            name = #{name},
+            email = #{email},
+            phone = #{phone},
+            address = #{address},
+            birthdate = #{birthdate},
+            gender = #{gender},
+            chat_username = #{chatUsername},
+            referral_source_id = #{referralSourceId}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE students
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM students
+        WHERE id = #{id}
+    </delete>
+
+    <select id="existsById" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM students WHERE id = #{id})
+    </select>
+
+    <select id="existsByEmail" resultType="boolean">
+        SELECT EXISTS(SELECT 1 FROM students WHERE email = #{email})
+    </select>
+
+    <select id="existsByEmailExcludingId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM students
+            WHERE email = #{email}
+              AND id != #{id}
+        )
+    </select>
+
+    <select id="hasRelatedRecords" resultType="boolean">
+        SELECT (
+            EXISTS(SELECT 1 FROM enrollments WHERE student_id = #{id})
+            OR EXISTS(SELECT 1 FROM payments WHERE student_id = #{id})
+            OR EXISTS(SELECT 1 FROM hearing_answers WHERE student_id = #{id})
+            OR EXISTS(SELECT 1 FROM mail_histories WHERE student_id = #{id})
+        )
+    </select>
+
+</mapper>
