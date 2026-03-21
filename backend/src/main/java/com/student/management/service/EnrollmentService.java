@@ -87,6 +87,11 @@ public class EnrollmentService {
         var course = courseMapper.findById(request.courseId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "コースが見つかりません"));
 
+        long activeCount = enrollmentMapper.countList(request.studentId(), request.courseId(), DEFAULT_ENROLLMENT_STATUS, null);
+        if (activeCount > 0) {
+            throw new ApiException(HttpStatus.CONFLICT, "この受講生は既にこのコースを受講中です");
+        }
+
         String enrollmentStatus = resolveEnrollmentStatus(request.status());
         int amount = request.amount() != null ? request.amount() : course.getPrice();
         if (amount < 0) {
@@ -125,7 +130,10 @@ public class EnrollmentService {
             throw new ApiException(HttpStatus.NOT_FOUND, "受講履歴が見つかりません");
         }
 
-        String nextStatus = request.status().trim();
+        String nextStatus = request.status() != null ? request.status().trim() : "";
+        if (nextStatus.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "受講状況は必須です");
+        }
         if (!ALLOWED_ENROLLMENT_STATUSES.contains(nextStatus)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "受講状況の値が不正です");
         }

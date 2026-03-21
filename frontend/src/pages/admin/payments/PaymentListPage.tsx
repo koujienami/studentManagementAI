@@ -69,6 +69,7 @@ export function PaymentListPage() {
         queryClient.invalidateQueries({ queryKey: ['payments'] }),
         queryClient.invalidateQueries({ queryKey: ['students'] }),
         queryClient.invalidateQueries({ queryKey: ['student'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
       ]);
     },
     onError: (error) => {

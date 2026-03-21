@@ -5,7 +5,7 @@ import { fetchDashboardStats } from '@/lib/api/dashboard';
 import { ROUTES } from '@/constants';
 
 export function DashboardPage() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, isError } = useQuery({
     queryKey: ['dashboard', 'stats'],
     queryFn: fetchDashboardStats,
   });
@@ -40,6 +40,11 @@ export function DashboardPage() {
   return (
     <div className="space-y-6">
       <h2 className="text-3xl font-bold tracking-tight">ダッシュボード</h2>
+      {isError && (
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          統計データの取得に失敗しました。
+        </div>
+      )}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {cards.map((card) => (
           <Link key={card.title} to={card.to} className="block">
@@ -49,7 +54,7 @@ export function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {isLoading ? '...' : (card.value ?? '-')}
+                  {isLoading ? '...' : isError ? '-' : (card.value ?? '-')}
                 </div>
                 <p className="text-xs text-muted-foreground">{card.description}</p>
               </CardContent>

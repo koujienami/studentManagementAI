@@ -156,6 +156,7 @@ export function StudentDetailPage() {
         queryClient.invalidateQueries({ queryKey: ['students'] }),
         queryClient.invalidateQueries({ queryKey: ['student', studentId] }),
         queryClient.invalidateQueries({ queryKey: ['payments'] }),
+        queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
       ]);
     },
     onError: (error) => {

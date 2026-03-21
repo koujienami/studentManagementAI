@@ -86,7 +86,10 @@ public class PaymentService {
             throw new ApiException(HttpStatus.NOT_FOUND, "決済が見つかりません");
         }
 
-        String nextStatus = request.status().trim();
+        String nextStatus = request.status() != null ? request.status().trim() : "";
+        if (nextStatus.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "決済状態は必須です");
+        }
         if (!ALLOWED_PAYMENT_STATUSES.contains(nextStatus)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "決済状態の値が不正です");
         }
