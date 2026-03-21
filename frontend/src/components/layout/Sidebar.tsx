@@ -14,6 +14,8 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'ダッシュボード', to: '/dashboard' },
   { label: '受講生管理', to: '/students' },
+  { label: '受講履歴', to: '/enrollments' },
+  { label: '決済', to: '/payments' },
   { label: 'コース管理', to: '/courses' },
   { label: 'メールテンプレート', to: '/mail-templates', roles: ['ADMIN'] },
   { label: '運営メンバー', to: '/members', roles: ['ADMIN'] },

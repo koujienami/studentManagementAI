@@ -53,6 +53,39 @@ export type PaymentStatus =
   | 'UNPAID'         // 未払い
   | 'PAID';          // 入金済み
 
+/** 受講履歴の受講状況 */
+export type EnrollmentStatus = 'ENROLLED' | 'COMPLETED' | 'WITHDRAWN';
+
+/** 受講履歴（API 一覧・詳細） */
+export interface EnrollmentListItem {
+  id: number;
+  studentId: number;
+  studentName: string;
+  courseId: number;
+  courseName: string;
+  startDate: string;
+  endDate: string | null;
+  status: EnrollmentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 決済（API 一覧・詳細） */
+export interface PaymentListItem {
+  id: number;
+  studentId: number;
+  studentName: string;
+  enrollmentId: number;
+  courseId: number;
+  courseName: string;
+  amount: number;
+  dueDate: string;
+  paidDate: string | null;
+  status: PaymentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** 受講生一覧項目 */
 export interface StudentListItem {
   id: number;

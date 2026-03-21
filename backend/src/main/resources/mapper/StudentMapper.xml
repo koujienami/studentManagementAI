@@ -224,4 +224,10 @@
         )
     </select>
 
+    <select id="findStatusById" resultType="java.lang.String">
+        SELECT status
+        FROM students
+        WHERE id = #{id}
+    </select>
+
 </mapper>

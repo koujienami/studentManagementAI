@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.student.management.repository.PaymentMapper">
+
+    <sql id="paymentRowSelect">
+        SELECT
+            p.id,
+            p.student_id,
+            s.name AS student_name,
+            p.enrollment_id,
+            e.course_id,
+            c.name AS course_name,
+            c.instructor_id AS course_instructor_id,
+            p.amount,
+            p.due_date,
+            p.paid_date,
+            p.status,
+            p.created_at,
+            p.updated_at
+        FROM payments p
+        INNER JOIN students s ON p.student_id = s.id
+        INNER JOIN enrollments e ON p.enrollment_id = e.id
+        INNER JOIN courses c ON e.course_id = c.id
+    </sql>
+
+    <sql id="paymentListWhere">
+        <where>
+            <if test="studentId != null">
+                AND p.student_id = #{studentId}
+            </if>
+            <if test="courseId != null">
+                AND e.course_id = #{courseId}
+            </if>
+            <if test="status != null and status != ''">
+                AND p.status = #{status}
+            </if>
+            <if test="instructorId != null">
+                AND c.instructor_id = #{instructorId}
+            </if>
+        </where>
+    </sql>
+
+    <select id="findRowById" resultType="com.student.management.entity.PaymentRow">
+        <include refid="paymentRowSelect"/>
+        WHERE p.id = #{id}
+    </select>
+
+    <select id="countList" resultType="long">
+        SELECT COUNT(*)
+        FROM payments p
+        INNER JOIN enrollments e ON p.enrollment_id = e.id
+        INNER JOIN courses c ON e.course_id = c.id
+        <include refid="paymentListWhere"/>
+    </select>
+
+    <select id="findList" resultType="com.student.management.entity.PaymentRow">
+        <include refid="paymentRowSelect"/>
+        <include refid="paymentListWhere"/>
+        ORDER BY p.created_at DESC, p.id DESC
+        LIMIT #{limit}
+        OFFSET #{offset}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO payments (
+            student_id,
+            enrollment_id,
+            amount,
+            due_date,
+            paid_date,
+            status
+        ) VALUES (
+            #{studentId},
+            #{enrollmentId},
+            #{amount},
+            #{dueDate},
+            #{paidDate},
+            #{status}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE payments
+        SET
+            amount = #{amount},
+            due_date = #{dueDate},
+            paid_date = #{paidDate},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

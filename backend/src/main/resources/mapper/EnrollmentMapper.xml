@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.student.management.repository.EnrollmentMapper">
+
+    <sql id="enrollmentRowSelect">
+        SELECT
+            e.id,
+            e.student_id,
+            s.name AS student_name,
+            e.course_id,
+            c.name AS course_name,
+            c.instructor_id AS course_instructor_id,
+            e.start_date,
+            e.end_date,
+            e.status,
+            e.created_at,
+            e.updated_at
+        FROM enrollments e
+        INNER JOIN students s ON e.student_id = s.id
+        INNER JOIN courses c ON e.course_id = c.id
+    </sql>
+
+    <sql id="enrollmentListWhere">
+        <where>
+            <if test="studentId != null">
+                AND e.student_id = #{studentId}
+            </if>
+            <if test="courseId != null">
+                AND e.course_id = #{courseId}
+            </if>
+            <if test="status != null and status != ''">
+                AND e.status = #{status}
+            </if>
+            <if test="instructorId != null">
+                AND c.instructor_id = #{instructorId}
+            </if>
+        </where>
+    </sql>
+
+    <select id="findRowById" resultType="com.student.management.entity.EnrollmentRow">
+        <include refid="enrollmentRowSelect"/>
+        WHERE e.id = #{id}
+    </select>
+
+    <select id="countList" resultType="long">
+        SELECT COUNT(*)
+        FROM enrollments e
+        INNER JOIN courses c ON e.course_id = c.id
+        <include refid="enrollmentListWhere"/>
+    </select>
+
+    <select id="findList" resultType="com.student.management.entity.EnrollmentRow">
+        <include refid="enrollmentRowSelect"/>
+        <include refid="enrollmentListWhere"/>
+        ORDER BY e.created_at DESC, e.id DESC
+        LIMIT #{limit}
+        OFFSET #{offset}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO enrollments (
+            student_id,
+            course_id,
+            start_date,
+            end_date,
+            status
+        ) VALUES (
+            #{studentId},
+            #{courseId},
+            #{startDate},
+            #{endDate},
+            #{status}
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE enrollments
+        SET
+            start_date = #{startDate},
+            end_date = #{endDate},
+            status = #{status}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

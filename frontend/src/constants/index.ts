@@ -2,7 +2,7 @@
 // 定数定義
 // ========================================
 
-import type { Gender, PaymentStatus, StudentStatus } from '@/types';
+import type { EnrollmentStatus, Gender, PaymentStatus, StudentStatus } from '@/types';
 
 /** API ベース URL */
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -40,6 +40,8 @@ export const ROUTES = {
   MEMBER_EDIT: '/members/:id/edit',
   MEMBER_NEW: '/members/new',
   PASSWORD_CHANGE: '/password',
+  ENROLLMENTS: '/enrollments',
+  PAYMENTS: '/payments',
 } as const;
 
 /** 受講生の状態ラベル */
@@ -63,4 +65,11 @@ export const GENDER_LABELS: Record<Gender, string> = {
 export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   UNPAID: '未払い',
   PAID: '入金済み',
+} as const;
+
+/** 受講履歴の受講状況ラベル */
+export const ENROLLMENT_STATUS_LABELS: Record<EnrollmentStatus, string> = {
+  ENROLLED: '受講中',
+  COMPLETED: '修了',
+  WITHDRAWN: '退会',
 } as const;
