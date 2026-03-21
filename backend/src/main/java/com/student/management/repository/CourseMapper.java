@@ -24,4 +24,6 @@ public interface CourseMapper {
     boolean existsById(@Param("id") Long id);
 
     boolean hasEnrollments(@Param("id") Long id);
+
+    long countAll();
 }

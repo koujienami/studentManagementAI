@@ -77,4 +77,8 @@
         SELECT EXISTS(SELECT 1 FROM enrollments WHERE course_id = #{id})
     </select>
 
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*) FROM courses
+    </select>
+
 </mapper>
