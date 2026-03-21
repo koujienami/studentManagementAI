@@ -13,6 +13,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Table,
@@ -22,11 +24,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { GENDER_LABELS, STUDENT_STATUS_LABELS } from '@/constants';
+import { ENROLLMENT_STATUS_LABELS, GENDER_LABELS, STUDENT_STATUS_LABELS } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
+import { fetchCourses } from '@/lib/api/courses';
+import { createEnrollment, updateEnrollment } from '@/lib/api/enrollments';
+import { updatePayment } from '@/lib/api/payments';
 import { deleteStudent, fetchStudent, updateStudentStatus } from '@/lib/api/students';
 import { getApiErrorMessage } from '@/lib/api/errors';
-import type { StudentStatus } from '@/types';
+import type { EnrollmentStatus, StudentEnrollmentSummary, StudentPaymentSummary, StudentStatus } from '@/types';
 
 const STATUS_TRANSITIONS: Record<StudentStatus, StudentStatus[]> = {
   PROVISIONAL: ['PRE_HEARING', 'WITHDRAWN'],
@@ -36,12 +41,6 @@ const STATUS_TRANSITIONS: Record<StudentStatus, StudentStatus[]> = {
   COMPLETED: [],
   WITHDRAWN: [],
 };
-const ENROLLMENT_STATUS_LABELS = {
-  ENROLLED: '受講中',
-  COMPLETED: '修了',
-  WITHDRAWN: '退会',
-} as const;
-
 function formatDate(value: string | null) {
   if (!value) {
     return '未設定';
@@ -63,11 +62,105 @@ export function StudentDetailPage() {
   const [actionError, setActionError] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<StudentStatus | ''>('');
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
+  const [editEnrollment, setEditEnrollment] = useState<StudentEnrollmentSummary | null>(null);
+  const [confirmPayment, setConfirmPayment] = useState<StudentPaymentSummary | null>(null);
+  const [enrollForm, setEnrollForm] = useState({
+    courseId: '',
+    startDate: '',
+    endDate: '',
+    dueDate: '',
+    amount: '',
+  });
+  const [editEnrollmentForm, setEditEnrollmentForm] = useState({
+    startDate: '',
+    endDate: '',
+    status: 'ENROLLED' as EnrollmentStatus,
+  });
 
   const studentQuery = useQuery({
     queryKey: ['student', studentId],
     queryFn: () => fetchStudent(studentId),
     enabled: Number.isFinite(studentId),
+  });
+
+  const coursesQuery = useQuery({
+    queryKey: ['course-options'],
+    queryFn: () => fetchCourses(),
+    enabled: canManageStudents && enrollDialogOpen,
+  });
+
+  const createEnrollmentMutation = useMutation({
+    mutationFn: () =>
+      createEnrollment({
+        studentId,
+        courseId: Number(enrollForm.courseId),
+        startDate: enrollForm.startDate,
+        endDate: enrollForm.endDate || null,
+        dueDate: enrollForm.dueDate,
+        amount: enrollForm.amount.trim() === '' ? null : Number(enrollForm.amount),
+      }),
+    onSuccess: async () => {
+      setActionError('');
+      setEnrollDialogOpen(false);
+      setEnrollForm({ courseId: '', startDate: '', endDate: '', dueDate: '', amount: '' });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['students'] }),
+        queryClient.invalidateQueries({ queryKey: ['student', studentId] }),
+        queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
+        queryClient.invalidateQueries({ queryKey: ['payments'] }),
+      ]);
+    },
+    onError: (error) => {
+      setActionError(getApiErrorMessage(error, '受講の登録に失敗しました'));
+    },
+  });
+
+  const updateEnrollmentMutation = useMutation({
+    mutationFn: () => {
+      if (!editEnrollment) {
+        return Promise.reject(new Error());
+      }
+      return updateEnrollment(editEnrollment.id, {
+        startDate: editEnrollmentForm.startDate,
+        endDate: editEnrollmentForm.endDate || null,
+        status: editEnrollmentForm.status,
+      });
+    },
+    onSuccess: async () => {
+      setActionError('');
+      setEditEnrollment(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['students'] }),
+        queryClient.invalidateQueries({ queryKey: ['student', studentId] }),
+        queryClient.invalidateQueries({ queryKey: ['enrollments'] }),
+      ]);
+    },
+    onError: (error) => {
+      setActionError(getApiErrorMessage(error, '受講履歴の更新に失敗しました'));
+    },
+  });
+
+  const confirmPaymentMutation = useMutation({
+    mutationFn: (p: StudentPaymentSummary) =>
+      updatePayment(p.id, {
+        amount: p.amount,
+        dueDate: p.dueDate,
+        paidDate: null,
+        status: 'PAID',
+      }),
+    onSuccess: async () => {
+      setActionError('');
+      setConfirmPayment(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['students'] }),
+        queryClient.invalidateQueries({ queryKey: ['student', studentId] }),
+        queryClient.invalidateQueries({ queryKey: ['payments'] }),
+      ]);
+    },
+    onError: (error) => {
+      setActionError(getApiErrorMessage(error, '入金確認に失敗しました'));
+    },
   });
 
   const statusMutation = useMutation({
@@ -229,8 +322,13 @@ export function StudentDetailPage() {
           )}
 
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
               <CardTitle>受講履歴</CardTitle>
+              {canManageStudents && (
+                <Button type="button" size="sm" onClick={() => setEnrollDialogOpen(true)}>
+                  受講を登録
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {student.enrollments.length > 0 ? (
@@ -241,6 +339,7 @@ export function StudentDetailPage() {
                       <TableHead>開始日</TableHead>
                       <TableHead>終了日</TableHead>
                       <TableHead>状態</TableHead>
+                      {canManageStudents && <TableHead className="w-[100px]">操作</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -250,6 +349,25 @@ export function StudentDetailPage() {
                         <TableCell>{formatDate(enrollment.startDate)}</TableCell>
                         <TableCell>{formatDate(enrollment.endDate)}</TableCell>
                         <TableCell>{ENROLLMENT_STATUS_LABELS[enrollment.status]}</TableCell>
+                        {canManageStudents && (
+                          <TableCell>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditEnrollment(enrollment);
+                                setEditEnrollmentForm({
+                                  startDate: enrollment.startDate.slice(0, 10),
+                                  endDate: enrollment.endDate ? enrollment.endDate.slice(0, 10) : '',
+                                  status: enrollment.status,
+                                });
+                              }}
+                            >
+                              編集
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
@@ -275,6 +393,7 @@ export function StudentDetailPage() {
                         <TableHead>支払期限</TableHead>
                         <TableHead>入金日</TableHead>
                         <TableHead>状態</TableHead>
+                        {canManageStudents && <TableHead className="w-[120px]">操作</TableHead>}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -287,6 +406,22 @@ export function StudentDetailPage() {
                           <TableCell>
                             <PaymentStatusBadge status={payment.status} />
                           </TableCell>
+                          {canManageStudents && (
+                            <TableCell>
+                              {payment.status === 'UNPAID' ? (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => setConfirmPayment(payment)}
+                                >
+                                  入金確認
+                                </Button>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
@@ -335,6 +470,191 @@ export function StudentDetailPage() {
             </Button>
             <Button variant="destructive" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
               {deleteMutation.isPending ? '削除中...' : '削除する'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={enrollDialogOpen}
+        onOpenChange={(open) => {
+          setEnrollDialogOpen(open);
+          if (!open) {
+            setEnrollForm({ courseId: '', startDate: '', endDate: '', dueDate: '', amount: '' });
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>受講を登録</DialogTitle>
+            <DialogDescription>コースを紐付け、未払いの決済を同時に作成します。</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="enroll-course">コース</Label>
+              <Select
+                value={enrollForm.courseId}
+                onValueChange={(v) => setEnrollForm((f) => ({ ...f, courseId: v }))}
+              >
+                <SelectTrigger id="enroll-course">
+                  <SelectValue placeholder="選択してください" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(coursesQuery.data ?? []).map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.name}（{c.price.toLocaleString()}円）
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="enroll-start">受講開始日</Label>
+              <Input
+                id="enroll-start"
+                type="date"
+                value={enrollForm.startDate}
+                onChange={(e) => setEnrollForm((f) => ({ ...f, startDate: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="enroll-end">受講終了日（任意）</Label>
+              <Input
+                id="enroll-end"
+                type="date"
+                value={enrollForm.endDate}
+                onChange={(e) => setEnrollForm((f) => ({ ...f, endDate: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="enroll-due">決済期日</Label>
+              <Input
+                id="enroll-due"
+                type="date"
+                value={enrollForm.dueDate}
+                onChange={(e) => setEnrollForm((f) => ({ ...f, dueDate: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="enroll-amount">金額（任意・未入力時はコース料金）</Label>
+              <Input
+                id="enroll-amount"
+                type="number"
+                min={0}
+                inputMode="numeric"
+                placeholder="例: 50000"
+                value={enrollForm.amount}
+                onChange={(e) => setEnrollForm((f) => ({ ...f, amount: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEnrollDialogOpen(false)}>
+              キャンセル
+            </Button>
+            <Button
+              type="button"
+              disabled={createEnrollmentMutation.isPending}
+              onClick={() => {
+                if (!enrollForm.courseId || !enrollForm.startDate || !enrollForm.dueDate) {
+                  setActionError('コース・受講開始日・決済期日は必須です');
+                  return;
+                }
+                if (enrollForm.amount.trim() !== '' && Number.isNaN(Number(enrollForm.amount))) {
+                  setActionError('金額の形式が不正です');
+                  return;
+                }
+                setActionError('');
+                createEnrollmentMutation.mutate();
+              }}
+            >
+              {createEnrollmentMutation.isPending ? '登録中...' : '登録する'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editEnrollment} onOpenChange={(open) => !open && setEditEnrollment(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>受講履歴を編集</DialogTitle>
+            <DialogDescription>開始日・終了日・受講状況を更新します。</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-enroll-start">受講開始日</Label>
+              <Input
+                id="edit-enroll-start"
+                type="date"
+                value={editEnrollmentForm.startDate}
+                onChange={(e) => setEditEnrollmentForm((f) => ({ ...f, startDate: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="edit-enroll-end">受講終了日（任意）</Label>
+              <Input
+                id="edit-enroll-end"
+                type="date"
+                value={editEnrollmentForm.endDate}
+                onChange={(e) => setEditEnrollmentForm((f) => ({ ...f, endDate: e.target.value }))}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>受講状況</Label>
+              <Select
+                value={editEnrollmentForm.status}
+                onValueChange={(v) =>
+                  setEditEnrollmentForm((f) => ({ ...f, status: v as EnrollmentStatus }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(['ENROLLED', 'COMPLETED', 'WITHDRAWN'] as const).map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {ENROLLMENT_STATUS_LABELS[s]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditEnrollment(null)}>
+              キャンセル
+            </Button>
+            <Button
+              type="button"
+              disabled={updateEnrollmentMutation.isPending}
+              onClick={() => updateEnrollmentMutation.mutate()}
+            >
+              {updateEnrollmentMutation.isPending ? '更新中...' : '保存する'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!confirmPayment} onOpenChange={(open) => !open && setConfirmPayment(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>入金を確認しますか？</DialogTitle>
+            <DialogDescription>
+              {confirmPayment
+                ? `${confirmPayment.courseName}（${confirmPayment.amount.toLocaleString()}円）を入金済みにします。受講生が仮登録の場合はヒアリング前へ進みます。`
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmPayment(null)}>
+              キャンセル
+            </Button>
+            <Button
+              type="button"
+              disabled={confirmPaymentMutation.isPending}
+              onClick={() => confirmPayment && confirmPaymentMutation.mutate(confirmPayment)}
+            >
+              {confirmPaymentMutation.isPending ? '処理中...' : '入金済みにする'}
             </Button>
           </DialogFooter>
         </DialogContent>

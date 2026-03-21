@@ -52,4 +52,9 @@ public interface StudentMapper {
     boolean existsByEmailExcludingId(@Param("email") String email, @Param("id") Long id);
 
     boolean hasRelatedRecords(@Param("id") Long id);
+
+    /**
+     * 受講生の状態のみ取得（決済連携など軽量参照用）。該当なしは null。
+     */
+    String findStatusById(@Param("id") Long id);
 }

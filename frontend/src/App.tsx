@@ -26,6 +26,8 @@ import { MailTemplateEditPage } from '@/pages/admin/mail-templates/MailTemplateE
 import { MemberListPage } from '@/pages/admin/members/MemberListPage';
 import { MemberEditPage } from '@/pages/admin/members/MemberEditPage';
 import { PasswordChangePage } from '@/pages/admin/PasswordChangePage';
+import { EnrollmentListPage } from '@/pages/admin/enrollments/EnrollmentListPage';
+import { PaymentListPage } from '@/pages/admin/payments/PaymentListPage';
 
 // エラー画面
 import { NotFoundPage } from '@/pages/NotFoundPage';
@@ -57,6 +59,8 @@ export default function App() {
                 <Route element={<AuthGuard allowedRoles={['ADMIN', 'STAFF', 'INSTRUCTOR']} />}>
                   <Route path="/students" element={<StudentListPage />} />
                   <Route path="/students/:id" element={<StudentDetailPage />} />
+                  <Route path="/enrollments" element={<EnrollmentListPage />} />
+                  <Route path="/payments" element={<PaymentListPage />} />
                 </Route>
                 <Route element={<AuthGuard allowedRoles={['ADMIN', 'STAFF']} />}>
                   <Route path="/students/new" element={<StudentEditPage />} />
