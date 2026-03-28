@@ -199,3 +199,30 @@ export interface ReferralSourceOption {
   name: string;
   category: string;
 }
+
+/** 公開申込フォーム用コース */
+export interface ApplyCourse {
+  id: number;
+  name: string;
+  description: string | null;
+  price: number;
+}
+
+/** 公開申込送信ペイロード */
+export interface ApplyInput {
+  name: string;
+  email: string;
+  phone: string;
+  courseId: number;
+  referralSourceId: number;
+}
+
+/** 公開申込 API レスポンス（内部 ID は含まない） */
+export interface ApplyResult {
+  courseName: string;
+  amount: number;
+  paymentDueDate: string;
+}
+
+/** 申込完了画面へ渡す状態（API レスポンスと同一形状） */
+export type ApplyCompleteState = ApplyResult;
