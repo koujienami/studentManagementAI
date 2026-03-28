@@ -1,8 +1,6 @@
-import { Link, useLocation } from 'react-router';
+import { useLocation } from 'react-router';
 import { CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ROUTES } from '@/constants';
 import type { ApplyCompleteState } from '@/types';
 
 function formatYen(n: number) {
@@ -76,10 +74,6 @@ export function ApplyCompletePage() {
                 <li>ヒアリング後、受講開始に向けた準備を進めます</li>
               </ol>
             </div>
-
-            <Button asChild className="w-full" size="lg">
-              <Link to={ROUTES.LOGIN}>運営ログインはこちら</Link>
-            </Button>
           </CardContent>
         </Card>
       </div>
