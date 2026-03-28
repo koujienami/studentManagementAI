@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
@@ -52,14 +52,15 @@ export function ApplyPage() {
   const applyMutation = useMutation({
     mutationFn: submitApplication,
     onSuccess: (data) => {
-      const state: ApplyCompleteState = {
-        courseName: data.courseName,
-        amount: data.amount,
-        paymentDueDate: data.paymentDueDate,
-      };
-      navigate(ROUTES.APPLY_COMPLETE, { state });
+      navigate(ROUTES.APPLY_COMPLETE, { state: data satisfies ApplyCompleteState });
     },
   });
+
+  useEffect(() => {
+    if (step === 2 && selectedCourseId == null) {
+      setStep(1);
+    }
+  }, [step, selectedCourseId]);
 
   const validateStep1 = () => {
     if (selectedCourseId == null) {

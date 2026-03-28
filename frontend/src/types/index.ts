@@ -224,9 +224,5 @@ export interface ApplyResult {
   paymentDueDate: string;
 }
 
-/** 申込完了画面へ渡す状態 */
-export interface ApplyCompleteState {
-  courseName: string;
-  amount: number;
-  paymentDueDate: string;
-}
+/** 申込完了画面へ渡す状態（API レスポンスと同一形状） */
+export type ApplyCompleteState = ApplyResult;

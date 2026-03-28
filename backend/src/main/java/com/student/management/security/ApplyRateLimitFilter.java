@@ -13,6 +13,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 公開の {@code POST /api/apply} に対する簡易レート制限（IP 単位・固定ウィンドウ）。
@@ -26,6 +27,7 @@ public class ApplyRateLimitFilter extends OncePerRequestFilter {
 
     private final ObjectMapper objectMapper;
     private final ConcurrentHashMap<String, ConcurrentLinkedQueue<Long>> requestsByIp = new ConcurrentHashMap<>();
+    private final AtomicInteger pruneCounter = new AtomicInteger();
 
     public ApplyRateLimitFilter(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
@@ -40,8 +42,10 @@ public class ApplyRateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
-        String ip = resolveClientIp(request);
         long now = System.currentTimeMillis();
+        maybePruneStaleEntries(now);
+
+        String ip = resolveClientIp(request);
         ConcurrentLinkedQueue<Long> times = requestsByIp.computeIfAbsent(ip, k -> new ConcurrentLinkedQueue<>());
 
         synchronized (times) {
@@ -62,9 +66,42 @@ public class ApplyRateLimitFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
+    /**
+     * 古い IP エントリを間欠的に掃除（長期間アクセスのない IP のキューが残り続けるのを防ぐ）。
+     */
+    private void maybePruneStaleEntries(long now) {
+        if (pruneCounter.incrementAndGet() % 100 != 0) {
+            return;
+        }
+        requestsByIp.entrySet().removeIf(entry -> {
+            ConcurrentLinkedQueue<Long> q = entry.getValue();
+            synchronized (q) {
+                while (!q.isEmpty() && now - q.peek() > WINDOW_MILLIS) {
+                    q.poll();
+                }
+                return q.isEmpty();
+            }
+        });
+    }
+
     private static boolean isApplyPost(HttpServletRequest request) {
-        return "POST".equalsIgnoreCase(request.getMethod())
-                && PATH.equals(request.getRequestURI());
+        if (!"POST".equalsIgnoreCase(request.getMethod())) {
+            return false;
+        }
+        return PATH.equals(requestPathWithoutContext(request));
+    }
+
+    private static String requestPathWithoutContext(HttpServletRequest request) {
+        String servletPath = request.getServletPath();
+        if (servletPath != null && !servletPath.isEmpty()) {
+            return servletPath;
+        }
+        String uri = request.getRequestURI();
+        String ctx = request.getContextPath();
+        if (ctx != null && !ctx.isEmpty() && uri.startsWith(ctx)) {
+            return uri.substring(ctx.length());
+        }
+        return uri;
     }
 
     private static String resolveClientIp(HttpServletRequest request) {
