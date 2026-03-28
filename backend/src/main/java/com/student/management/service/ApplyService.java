@@ -72,6 +72,7 @@ public class ApplyService {
         if (normalizedEmail == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "メールアドレスは必須です");
         }
+        // 先に存在チェック（DB への無駄な INSERT を減らす）。並行申込は UNIQUE + DuplicateKey で 409 に揃える。
         if (studentMapper.existsByEmail(normalizedEmail)) {
             throw new ApiException(HttpStatus.CONFLICT, APPLY_CONFLICT_MESSAGE);
         }

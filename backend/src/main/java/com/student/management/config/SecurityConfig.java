@@ -81,10 +81,10 @@ public class SecurityConfig {
                                     new ErrorResponse(403, "アクセス権限がありません"));
                         })
                 )
-                .addFilterBefore(applyRateLimitFilter,
-                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter,
-                        UsernamePasswordAuthenticationFilter.class);
+                        UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(applyRateLimitFilter,
+                        JwtAuthenticationFilter.class);
 
         return http.build();
     }
