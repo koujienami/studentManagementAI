@@ -203,6 +203,7 @@ export function ApplyPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     autoComplete="email"
+                    maxLength={255}
                     aria-invalid={!!mergedErrors.email}
                   />
                   {mergedErrors.email && <p className="text-sm text-destructive">{mergedErrors.email}</p>}
@@ -218,6 +219,7 @@ export function ApplyPage() {
                     onChange={(e) => setPhone(e.target.value)}
                     autoComplete="tel"
                     placeholder="例: 090-1234-5678"
+                    maxLength={20}
                     aria-invalid={!!mergedErrors.phone}
                   />
                   {mergedErrors.phone && <p className="text-sm text-destructive">{mergedErrors.phone}</p>}
