@@ -2,6 +2,7 @@ package com.student.management.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.student.management.dto.ErrorResponse;
+import com.student.management.security.ApplyRateLimitFilter;
 import com.student.management.security.JwtAuthenticationFilter;
 import com.student.management.security.JwtProperties;
 import jakarta.servlet.http.HttpServletResponse;
@@ -34,13 +35,16 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ApplyRateLimitFilter applyRateLimitFilter;
     private final CorsProperties corsProperties;
     private final ObjectMapper objectMapper;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          ApplyRateLimitFilter applyRateLimitFilter,
                           CorsProperties corsProperties,
                           ObjectMapper objectMapper) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.applyRateLimitFilter = applyRateLimitFilter;
         this.corsProperties = corsProperties;
         this.objectMapper = objectMapper;
     }
@@ -77,6 +81,8 @@ public class SecurityConfig {
                                     new ErrorResponse(403, "アクセス権限がありません"));
                         })
                 )
+                .addFilterBefore(applyRateLimitFilter,
+                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);
 

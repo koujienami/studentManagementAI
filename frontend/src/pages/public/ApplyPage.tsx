@@ -83,7 +83,10 @@ export function ApplyPage() {
   };
 
   const handleNext = () => {
-    if (validateStep1()) setStep(2);
+    if (validateStep1()) {
+      applyMutation.reset();
+      setStep(2);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {

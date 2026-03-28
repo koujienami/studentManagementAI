@@ -33,6 +33,12 @@ public class ApplyService {
     private static final int PAYMENT_DUE_DAYS = 30;
     private static final ZoneId ZONE_TOKYO = ZoneId.of("Asia/Tokyo");
 
+    /**
+     * メール重複時のメッセージ（登録有無の列挙に使われないよう具体理由を伏せる）。
+     */
+    private static final String APPLY_CONFLICT_MESSAGE =
+            "お申し込みを受け付けられませんでした。入力内容をご確認のうえ、時間をおいて再度お試しください。";
+
     private final StudentMapper studentMapper;
     private final EnrollmentMapper enrollmentMapper;
     private final PaymentMapper paymentMapper;
@@ -67,7 +73,7 @@ public class ApplyService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "メールアドレスは必須です");
         }
         if (studentMapper.existsByEmail(normalizedEmail)) {
-            throw new ApiException(HttpStatus.CONFLICT, "同じメールアドレスの受講生が既に存在します");
+            throw new ApiException(HttpStatus.CONFLICT, APPLY_CONFLICT_MESSAGE);
         }
         if (!referralSourceMapper.existsById(request.referralSourceId())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "申込経路が存在しません");
@@ -92,7 +98,7 @@ public class ApplyService {
         try {
             studentMapper.insert(student);
         } catch (DuplicateKeyException e) {
-            throw new ApiException(HttpStatus.CONFLICT, "同じメールアドレスの受講生が既に存在します");
+            throw new ApiException(HttpStatus.CONFLICT, APPLY_CONFLICT_MESSAGE);
         }
 
         Enrollment enrollment = new Enrollment();
