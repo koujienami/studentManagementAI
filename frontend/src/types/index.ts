@@ -217,11 +217,8 @@ export interface ApplyInput {
   referralSourceId: number;
 }
 
-/** 公開申込 API レスポンス */
+/** 公開申込 API レスポンス（内部 ID は含まない） */
 export interface ApplyResult {
-  studentId: number;
-  enrollmentId: number;
-  paymentId: number;
   courseName: string;
   amount: number;
   paymentDueDate: string;

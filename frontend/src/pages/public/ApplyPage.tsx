@@ -16,17 +16,13 @@ import {
 import { ROUTES } from '@/constants';
 import { fetchApplyCourses, fetchApplyReferralSources, submitApplication } from '@/lib/api/apply';
 import { getApiErrorMessage, getApiValidationErrors } from '@/lib/api/errors';
-import { cn } from '@/lib/utils';
+import { cn, formatYen } from '@/lib/utils';
 import type { ApplyCompleteState, ApplyCourse } from '@/types';
 
 const EMPTY_REFERRAL = '__EMPTY__';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^$|^[0-9+()\-\s]{8,20}$/;
-
-function formatYen(n: number) {
-  return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(n);
-}
 
 export function ApplyPage() {
   const navigate = useNavigate();

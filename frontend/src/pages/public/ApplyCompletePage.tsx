@@ -1,11 +1,8 @@
 import { useLocation } from 'react-router';
 import { CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatYen } from '@/lib/utils';
 import type { ApplyCompleteState } from '@/types';
-
-function formatYen(n: number) {
-  return new Intl.NumberFormat('ja-JP', { style: 'currency', currency: 'JPY' }).format(n);
-}
 
 function formatDate(iso: string) {
   try {

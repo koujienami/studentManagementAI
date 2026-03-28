@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 @Transactional(readOnly = true)
@@ -57,7 +58,7 @@ public class ApplyService {
 
     @Transactional
     public ApplyResponse submit(ApplyRequest request) {
-        String normalizedEmail = normalize(request.email());
+        String normalizedEmail = normalizeEmail(request.email());
         if (normalizedEmail == null) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "メールアドレスは必須です");
         }
@@ -103,14 +104,7 @@ public class ApplyService {
         payment.setStatus(PAYMENT_UNPAID);
         paymentMapper.insert(payment);
 
-        return new ApplyResponse(
-                student.getId(),
-                enrollment.getId(),
-                payment.getId(),
-                course.getName(),
-                course.getPrice(),
-                dueDate
-        );
+        return new ApplyResponse(course.getName(), course.getPrice(), dueDate);
     }
 
     private ApplyCourseResponse toApplyCourseResponse(CourseWithInstructor course) {
@@ -128,5 +122,16 @@ public class ApplyService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
+     * trim のあと小文字化（重複チェック・保存で同一扱いにする）。
+     */
+    private String normalizeEmail(String email) {
+        String trimmed = normalize(email);
+        if (trimmed == null) {
+            return null;
+        }
+        return trimmed.toLowerCase(Locale.ROOT);
     }
 }

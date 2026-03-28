@@ -19,12 +19,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -61,21 +64,21 @@ class ApplyServiceTest {
         course.setPrice(50000);
         when(courseMapper.findById(10L)).thenReturn(Optional.of(course));
 
-        when(studentMapper.insert(any(Student.class))).thenAnswer(inv -> {
+        doAnswer(inv -> {
             Student s = inv.getArgument(0);
             s.setId(100L);
             return null;
-        });
-        when(enrollmentMapper.insert(any(Enrollment.class))).thenAnswer(inv -> {
+        }).when(studentMapper).insert(any(Student.class));
+        doAnswer(inv -> {
             Enrollment e = inv.getArgument(0);
             e.setId(200L);
             return null;
-        });
-        when(paymentMapper.insert(any(Payment.class))).thenAnswer(inv -> {
+        }).when(enrollmentMapper).insert(any(Enrollment.class));
+        doAnswer(inv -> {
             Payment p = inv.getArgument(0);
             p.setId(300L);
             return null;
-        });
+        }).when(paymentMapper).insert(any(Payment.class));
 
         ApplyRequest request = new ApplyRequest(
                 "山田太郎",
@@ -87,14 +90,14 @@ class ApplyServiceTest {
 
         var response = applyService.submit(request);
 
-        assertThat(response.studentId()).isEqualTo(100L);
-        assertThat(response.enrollmentId()).isEqualTo(200L);
-        assertThat(response.paymentId()).isEqualTo(300L);
         assertThat(response.courseName()).isEqualTo("Java入門");
         assertThat(response.amount()).isEqualTo(50000);
+        assertThat(response.paymentDueDate()).isEqualTo(
+                LocalDate.now(ZoneId.of("Asia/Tokyo")).plusDays(30));
 
         ArgumentCaptor<Student> studentCap = ArgumentCaptor.forClass(Student.class);
         verify(studentMapper).insert(studentCap.capture());
+        assertThat(studentCap.getValue().getEmail()).isEqualTo("a@example.com");
         assertThat(studentCap.getValue().getStatus()).isEqualTo("PROVISIONAL");
         assertThat(studentCap.getValue().getReferralSourceId()).isEqualTo(1L);
 
@@ -108,6 +111,47 @@ class ApplyServiceTest {
         verify(paymentMapper).insert(payCap.capture());
         assertThat(payCap.getValue().getAmount()).isEqualTo(50000);
         assertThat(payCap.getValue().getStatus()).isEqualTo("UNPAID");
+    }
+
+    @Test
+    void submit_normalizesEmailToLowerCase_forDuplicateCheckAndStorage() {
+        when(studentMapper.existsByEmail("user@example.com")).thenReturn(false);
+        when(referralSourceMapper.existsById(1L)).thenReturn(true);
+
+        CourseWithInstructor course = new CourseWithInstructor();
+        course.setId(10L);
+        course.setName("A");
+        course.setPrice(1000);
+        when(courseMapper.findById(10L)).thenReturn(Optional.of(course));
+
+        doAnswer(inv -> {
+            Student s = inv.getArgument(0);
+            s.setId(1L);
+            return null;
+        }).when(studentMapper).insert(any(Student.class));
+        doAnswer(inv -> {
+            Enrollment e = inv.getArgument(0);
+            e.setId(2L);
+            return null;
+        }).when(enrollmentMapper).insert(any(Enrollment.class));
+        doAnswer(inv -> {
+            Payment p = inv.getArgument(0);
+            p.setId(3L);
+            return null;
+        }).when(paymentMapper).insert(any(Payment.class));
+
+        applyService.submit(new ApplyRequest(
+                "山田",
+                "USER@EXAMPLE.COM",
+                "",
+                10L,
+                1L
+        ));
+
+        verify(studentMapper).existsByEmail("user@example.com");
+        ArgumentCaptor<Student> cap = ArgumentCaptor.forClass(Student.class);
+        verify(studentMapper).insert(cap.capture());
+        assertThat(cap.getValue().getEmail()).isEqualTo("user@example.com");
     }
 
     @Test
