@@ -13,6 +13,7 @@ import com.student.management.repository.EnrollmentMapper;
 import com.student.management.repository.PaymentMapper;
 import com.student.management.repository.ReferralSourceMapper;
 import com.student.management.repository.StudentMapper;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,6 +51,9 @@ public class ApplyService {
         this.referralSourceMapper = referralSourceMapper;
     }
 
+    /**
+     * 申込フォーム用のコース一覧。現仕様ではマスタ上すべて公開扱い（非公開フラグは未実装）。
+     */
     public List<ApplyCourseResponse> listPublicCourses() {
         return courseMapper.findAll(null).stream()
                 .map(this::toApplyCourseResponse)
@@ -85,7 +89,11 @@ public class ApplyService {
         student.setChatUsername(null);
         student.setStatus(STATUS_PROVISIONAL);
         student.setReferralSourceId(request.referralSourceId());
-        studentMapper.insert(student);
+        try {
+            studentMapper.insert(student);
+        } catch (DuplicateKeyException e) {
+            throw new ApiException(HttpStatus.CONFLICT, "同じメールアドレスの受講生が既に存在します");
+        }
 
         Enrollment enrollment = new Enrollment();
         enrollment.setStudentId(student.getId());

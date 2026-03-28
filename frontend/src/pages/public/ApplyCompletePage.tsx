@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatYen } from '@/lib/utils';
 import type { ApplyCompleteState } from '@/types';
 
+/** バックエンドの日付は Asia/Tokyo 基準のため、表示も JST の暦日として解釈する */
 function formatDate(iso: string) {
   try {
-    const d = new Date(iso + 'T00:00:00');
-    return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'long' }).format(d);
+    const d = new Date(`${iso}T00:00:00+09:00`);
+    return new Intl.DateTimeFormat('ja-JP', { dateStyle: 'long', timeZone: 'Asia/Tokyo' }).format(d);
   } catch {
     return iso;
   }

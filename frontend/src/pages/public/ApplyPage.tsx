@@ -88,6 +88,7 @@ export function ApplyPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (applyMutation.isPending) return;
     if (!validateStep2() || selectedCourseId == null) return;
 
     applyMutation.mutate({

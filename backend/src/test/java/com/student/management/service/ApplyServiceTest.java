@@ -17,6 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -152,6 +154,26 @@ class ApplyServiceTest {
         ArgumentCaptor<Student> cap = ArgumentCaptor.forClass(Student.class);
         verify(studentMapper).insert(cap.capture());
         assertThat(cap.getValue().getEmail()).isEqualTo("user@example.com");
+    }
+
+    @Test
+    void submit_whenInsertDuplicateKey_mapsToConflict() {
+        when(studentMapper.existsByEmail("a@example.com")).thenReturn(false);
+        when(referralSourceMapper.existsById(1L)).thenReturn(true);
+        CourseWithInstructor course = new CourseWithInstructor();
+        course.setId(10L);
+        course.setName("Java");
+        course.setPrice(1000);
+        when(courseMapper.findById(10L)).thenReturn(Optional.of(course));
+        doThrow(new DuplicateKeyException("duplicate", null)).when(studentMapper).insert(any(Student.class));
+
+        assertThatThrownBy(() -> applyService.submit(new ApplyRequest(
+                "山田", "a@example.com", "", 10L, 1L)))
+                .isInstanceOf(ApiException.class)
+                .extracting(ex -> ((ApiException) ex).getStatus())
+                .isEqualTo(HttpStatus.CONFLICT);
+
+        verify(enrollmentMapper, never()).insert(any());
     }
 
     @Test
