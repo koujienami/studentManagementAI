@@ -11,6 +11,7 @@ import com.student.management.entity.Student;
 import com.student.management.entity.StudentDetail;
 import com.student.management.entity.StudentListItem;
 import com.student.management.exception.ApiException;
+import com.student.management.domain.StudentStatusCodes;
 import com.student.management.repository.ReferralSourceMapper;
 import com.student.management.repository.StudentMapper;
 import com.student.management.security.CustomUserDetails;
@@ -31,19 +32,13 @@ public class StudentService {
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_PAGE_SIZE = 20;
     private static final int MAX_PAGE_SIZE = 100;
-    private static final String STATUS_PROVISIONAL = "PROVISIONAL";
-    private static final String STATUS_PRE_HEARING = "PRE_HEARING";
-    private static final String STATUS_POST_HEARING = "POST_HEARING";
-    private static final String STATUS_ENROLLED = "ENROLLED";
-    private static final String STATUS_COMPLETED = "COMPLETED";
-    private static final String STATUS_WITHDRAWN = "WITHDRAWN";
     private static final Set<String> ALLOWED_INITIAL_STATUSES = Set.of(
-            STATUS_PROVISIONAL,
-            STATUS_PRE_HEARING,
-            STATUS_POST_HEARING,
-            STATUS_ENROLLED,
-            STATUS_COMPLETED,
-            STATUS_WITHDRAWN
+            StudentStatusCodes.PROVISIONAL,
+            StudentStatusCodes.PRE_HEARING,
+            StudentStatusCodes.POST_HEARING,
+            StudentStatusCodes.ENROLLED,
+            StudentStatusCodes.COMPLETED,
+            StudentStatusCodes.WITHDRAWN
     );
 
     private final StudentMapper studentMapper;
@@ -200,7 +195,7 @@ public class StudentService {
     private String resolveInitialStatus(String status) {
         String normalizedStatus = normalize(status);
         if (normalizedStatus == null) {
-            return STATUS_PROVISIONAL;
+            return StudentStatusCodes.PROVISIONAL;
         }
 
         if (!ALLOWED_INITIAL_STATUSES.contains(normalizedStatus)) {
@@ -230,10 +225,16 @@ public class StudentService {
         }
 
         return switch (currentStatus) {
-            case STATUS_PROVISIONAL -> STATUS_PRE_HEARING.equals(nextStatus) || STATUS_WITHDRAWN.equals(nextStatus);
-            case STATUS_PRE_HEARING -> STATUS_POST_HEARING.equals(nextStatus) || STATUS_WITHDRAWN.equals(nextStatus);
-            case STATUS_POST_HEARING -> STATUS_ENROLLED.equals(nextStatus) || STATUS_WITHDRAWN.equals(nextStatus);
-            case STATUS_ENROLLED -> STATUS_COMPLETED.equals(nextStatus) || STATUS_WITHDRAWN.equals(nextStatus);
+            case StudentStatusCodes.PROVISIONAL ->
+                    StudentStatusCodes.PRE_HEARING.equals(nextStatus) || StudentStatusCodes.WITHDRAWN.equals(nextStatus);
+            case StudentStatusCodes.PRE_HEARING ->
+                    StudentStatusCodes.POST_HEARING.equals(nextStatus)
+                            || StudentStatusCodes.ENROLLED.equals(nextStatus)
+                            || StudentStatusCodes.WITHDRAWN.equals(nextStatus);
+            case StudentStatusCodes.POST_HEARING ->
+                    StudentStatusCodes.ENROLLED.equals(nextStatus) || StudentStatusCodes.WITHDRAWN.equals(nextStatus);
+            case StudentStatusCodes.ENROLLED ->
+                    StudentStatusCodes.COMPLETED.equals(nextStatus) || StudentStatusCodes.WITHDRAWN.equals(nextStatus);
             default -> false;
         };
     }

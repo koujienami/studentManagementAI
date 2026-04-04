@@ -1,5 +1,12 @@
 import apiClient from '@/lib/api/client';
-import type { PaginatedResponse, StudentDetail, StudentInput, StudentListItem, StudentStatus } from '@/types';
+import type {
+  HearingAnswerRow,
+  PaginatedResponse,
+  StudentDetail,
+  StudentInput,
+  StudentListItem,
+  StudentStatus,
+} from '@/types';
 
 export interface StudentListParams {
   keyword?: string;
@@ -48,4 +55,24 @@ export async function updateStudentStatus(id: number, status: StudentStatus) {
 
 export async function deleteStudent(id: number) {
   await apiClient.delete(`/students/${id}`);
+}
+
+export async function fetchActiveHearingToken(studentId: number): Promise<string | null> {
+  const response = await apiClient.get<{ token: string }>(`/students/${studentId}/hearing-tokens`, {
+    validateStatus: (status) => status === 200 || status === 204,
+  });
+  if (response.status === 204 || !response.data?.token) {
+    return null;
+  }
+  return response.data.token;
+}
+
+export async function rotateHearingToken(studentId: number): Promise<string> {
+  const response = await apiClient.post<{ token: string }>(`/students/${studentId}/hearing-tokens`);
+  return response.data.token;
+}
+
+export async function fetchHearingAnswers(studentId: number): Promise<HearingAnswerRow[]> {
+  const response = await apiClient.get<HearingAnswerRow[]>(`/students/${studentId}/hearing-answers`);
+  return response.data;
 }

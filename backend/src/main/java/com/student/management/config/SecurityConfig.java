@@ -3,6 +3,7 @@ package com.student.management.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.student.management.dto.ErrorResponse;
 import com.student.management.security.ApplyRateLimitFilter;
+import com.student.management.security.HearingRateLimitFilter;
 import com.student.management.security.JwtAuthenticationFilter;
 import com.student.management.security.JwtProperties;
 import jakarta.servlet.http.HttpServletResponse;
@@ -35,15 +36,18 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final HearingRateLimitFilter hearingRateLimitFilter;
     private final ApplyRateLimitFilter applyRateLimitFilter;
     private final CorsProperties corsProperties;
     private final ObjectMapper objectMapper;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter,
+                          HearingRateLimitFilter hearingRateLimitFilter,
                           ApplyRateLimitFilter applyRateLimitFilter,
                           CorsProperties corsProperties,
                           ObjectMapper objectMapper) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        this.hearingRateLimitFilter = hearingRateLimitFilter;
         this.applyRateLimitFilter = applyRateLimitFilter;
         this.corsProperties = corsProperties;
         this.objectMapper = objectMapper;
@@ -84,7 +88,9 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(applyRateLimitFilter,
-                        JwtAuthenticationFilter.class);
+                        JwtAuthenticationFilter.class)
+                .addFilterBefore(hearingRateLimitFilter,
+                        ApplyRateLimitFilter.class);
 
         return http.build();
     }

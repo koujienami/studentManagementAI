@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.student.management.repository.HearingItemMapper">
+
+    <select id="findAllOrdered" resultType="com.student.management.entity.HearingItem">
+        SELECT id,
+               name,
+               type,
+               required,
+               display_order AS displayOrder
+        FROM hearing_items
+        ORDER BY display_order ASC, id ASC
+    </select>
+</mapper>

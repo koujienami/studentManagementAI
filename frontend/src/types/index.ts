@@ -226,3 +226,28 @@ export interface ApplyResult {
 
 /** 申込完了画面へ渡す状態（API レスポンスと同一形状） */
 export type ApplyCompleteState = ApplyResult;
+
+/** ヒアリング項目（公開フォーム） */
+export interface HearingItem {
+  id: number;
+  name: string;
+  type: string;
+  required: boolean;
+  displayOrder: number;
+}
+
+/** ヒアリングセッション（GET /api/hearing/:token） */
+export interface HearingSession {
+  items: HearingItem[];
+  displayName: string;
+  canSubmit: boolean;
+  message: string;
+}
+
+/** ヒアリング回答（管理画面） */
+export interface HearingAnswerRow {
+  hearingItemId: number;
+  itemName: string;
+  answer: string;
+  answeredAt: string;
+}

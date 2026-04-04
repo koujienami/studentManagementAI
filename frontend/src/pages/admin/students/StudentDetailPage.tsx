@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { StudentHearingSection } from '@/components/admin/students/StudentHearingSection';
 import { PaymentStatusBadge } from '@/components/shared/PaymentStatusBadge';
 import { StudentStatusBadge } from '@/components/shared/StudentStatusBadge';
 import { Button } from '@/components/ui/button';
@@ -29,13 +30,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { fetchCourses } from '@/lib/api/courses';
 import { createEnrollment, updateEnrollment } from '@/lib/api/enrollments';
 import { updatePayment } from '@/lib/api/payments';
-import { deleteStudent, fetchStudent, updateStudentStatus } from '@/lib/api/students';
+import {
+  deleteStudent,
+  fetchActiveHearingToken,
+  fetchHearingAnswers,
+  fetchStudent,
+  rotateHearingToken,
+  updateStudentStatus,
+} from '@/lib/api/students';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import type { EnrollmentStatus, StudentEnrollmentSummary, StudentPaymentSummary, StudentStatus } from '@/types';
 
 const STATUS_TRANSITIONS: Record<StudentStatus, StudentStatus[]> = {
   PROVISIONAL: ['PRE_HEARING', 'WITHDRAWN'],
-  PRE_HEARING: ['POST_HEARING', 'WITHDRAWN'],
+  PRE_HEARING: ['POST_HEARING', 'ENROLLED', 'WITHDRAWN'],
   POST_HEARING: ['ENROLLED', 'WITHDRAWN'],
   ENROLLED: ['COMPLETED', 'WITHDRAWN'],
   COMPLETED: [],
@@ -82,6 +90,32 @@ export function StudentDetailPage() {
     queryKey: ['student', studentId],
     queryFn: () => fetchStudent(studentId),
     enabled: Number.isFinite(studentId),
+  });
+
+  const hearingTokenQuery = useQuery({
+    queryKey: ['hearing-token', studentId],
+    queryFn: () => fetchActiveHearingToken(studentId),
+    enabled:
+      Number.isFinite(studentId) &&
+      studentQuery.data?.status === 'PRE_HEARING' &&
+      canManageStudents,
+  });
+
+  const hearingAnswersQuery = useQuery({
+    queryKey: ['hearing-answers', studentId],
+    queryFn: () => fetchHearingAnswers(studentId),
+    enabled: Number.isFinite(studentId) && !!studentQuery.data,
+  });
+
+  const rotateHearingTokenMutation = useMutation({
+    mutationFn: () => rotateHearingToken(studentId),
+    onSuccess: async () => {
+      setActionError('');
+      await queryClient.invalidateQueries({ queryKey: ['hearing-token', studentId] });
+    },
+    onError: (error) => {
+      setActionError(getApiErrorMessage(error, 'ヒアリングURLの再発行に失敗しました'));
+    },
   });
 
   const coursesQuery = useQuery({
@@ -157,6 +191,7 @@ export function StudentDetailPage() {
         queryClient.invalidateQueries({ queryKey: ['student', studentId] }),
         queryClient.invalidateQueries({ queryKey: ['payments'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['hearing-token', studentId] }),
       ]);
     },
     onError: (error) => {
@@ -172,6 +207,8 @@ export function StudentDetailPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['students'] }),
         queryClient.invalidateQueries({ queryKey: ['student', studentId] }),
+        queryClient.invalidateQueries({ queryKey: ['hearing-token', studentId] }),
+        queryClient.invalidateQueries({ queryKey: ['hearing-answers', studentId] }),
       ]);
     },
     onError: (error) => {
@@ -278,6 +315,14 @@ export function StudentDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          <StudentHearingSection
+            showUrlCard={canManageStudents && student.status === 'PRE_HEARING'}
+            tokenQuery={hearingTokenQuery}
+            answersQuery={hearingAnswersQuery}
+            rotateMutation={rotateHearingTokenMutation}
+            setActionError={setActionError}
+          />
 
           {canManageStudents && (
             <Card>

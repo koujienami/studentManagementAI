@@ -113,7 +113,21 @@ CREATE TABLE IF NOT EXISTS hearing_answers (
     CONSTRAINT fk_hearing_answers_student
         FOREIGN KEY (student_id) REFERENCES students (id),
     CONSTRAINT fk_hearing_answers_hearing_item
-        FOREIGN KEY (hearing_item_id) REFERENCES hearing_items (id)
+        FOREIGN KEY (hearing_item_id) REFERENCES hearing_items (id),
+    CONSTRAINT uq_hearing_answers_student_item UNIQUE (student_id, hearing_item_id)
+);
+
+-- ヒアリングURLトークン
+CREATE TABLE IF NOT EXISTS hearing_tokens (
+    id         BIGSERIAL   PRIMARY KEY,
+    student_id BIGINT      NOT NULL,
+    token      VARCHAR(64) NOT NULL UNIQUE,
+    expires_at TIMESTAMP,
+    used_at    TIMESTAMP,
+    created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_hearing_tokens_student
+        FOREIGN KEY (student_id) REFERENCES students (id)
 );
 
 -- メールテンプレート
@@ -188,6 +202,7 @@ CREATE INDEX IF NOT EXISTS idx_payments_enrollment ON payments (enrollment_id);
 CREATE INDEX IF NOT EXISTS idx_payments_status     ON payments (status);
 CREATE INDEX IF NOT EXISTS idx_hearing_answers_student  ON hearing_answers (student_id);
 CREATE INDEX IF NOT EXISTS idx_hearing_answers_item     ON hearing_answers (hearing_item_id);
+CREATE INDEX IF NOT EXISTS idx_hearing_tokens_student   ON hearing_tokens (student_id);
 CREATE INDEX IF NOT EXISTS idx_mail_histories_student   ON mail_histories (student_id);
 CREATE INDEX IF NOT EXISTS idx_mail_histories_user      ON mail_histories (user_id);
 CREATE INDEX IF NOT EXISTS idx_mail_histories_template  ON mail_histories (template_id);

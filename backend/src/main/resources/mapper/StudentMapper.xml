@@ -220,6 +220,7 @@
             EXISTS(SELECT 1 FROM enrollments WHERE student_id = #{id})
             OR EXISTS(SELECT 1 FROM payments WHERE student_id = #{id})
             OR EXISTS(SELECT 1 FROM hearing_answers WHERE student_id = #{id})
+            OR EXISTS(SELECT 1 FROM hearing_tokens WHERE student_id = #{id})
             OR EXISTS(SELECT 1 FROM mail_histories WHERE student_id = #{id})
         )
     </select>

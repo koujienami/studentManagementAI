@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.student.management.repository.HearingAnswerMapper">
+
+    <insert id="upsert">
+        INSERT INTO hearing_answers (student_id, hearing_item_id, answer, answered_at)
+        VALUES (#{studentId}, #{hearingItemId}, #{answer}, #{answeredAt})
+        ON CONFLICT (student_id, hearing_item_id)
+            DO UPDATE SET answer       = EXCLUDED.answer,
+                          answered_at  = EXCLUDED.answered_at,
+                          updated_at = CURRENT_TIMESTAMP
+    </insert>
+
+    <select id="findByStudentId" resultType="com.student.management.entity.HearingAnswerView">
+        SELECT ha.hearing_item_id AS hearingItemId,
+               hi.name AS itemName,
+               ha.answer,
+               ha.answered_at AS answeredAt
+        FROM hearing_answers ha
+                 INNER JOIN hearing_items hi ON ha.hearing_item_id = hi.id
+        WHERE ha.student_id = #{studentId}
+        ORDER BY hi.display_order ASC, hi.id ASC
+    </select>
+</mapper>

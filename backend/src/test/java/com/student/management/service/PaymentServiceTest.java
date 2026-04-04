@@ -38,6 +38,9 @@ class PaymentServiceTest {
     @Mock
     private StudentMapper studentMapper;
 
+    @Mock
+    private HearingService hearingService;
+
     @InjectMocks
     private PaymentService paymentService;
 
@@ -101,6 +104,7 @@ class PaymentServiceTest {
         paymentService.update(9L, request);
 
         verify(studentMapper).updateStatus(eq(100L), eq("PRE_HEARING"));
+        verify(hearingService).issueTokenIfAbsent(100L);
     }
 
     @Test
@@ -115,6 +119,7 @@ class PaymentServiceTest {
                 50000, LocalDate.of(2025, 4, 1), null, "PAID"));
 
         verify(studentMapper, never()).updateStatus(anyLong(), anyString());
+        verify(hearingService, never()).issueTokenIfAbsent(anyLong());
     }
 
     @Test
