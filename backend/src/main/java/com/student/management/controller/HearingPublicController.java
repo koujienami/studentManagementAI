@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * 公開ヒアリング API。レート制限は {@link com.student.management.security.HearingRateLimitFilter} を参照。
+ */
 @RestController
 @RequestMapping("/api/hearing")
 public class HearingPublicController {
