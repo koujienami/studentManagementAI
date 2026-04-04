@@ -11,6 +11,7 @@ import com.student.management.entity.HearingToken;
 import com.student.management.entity.HearingAnswerView;
 import com.student.management.entity.StudentDetail;
 import com.student.management.exception.ApiException;
+import com.student.management.domain.StudentStatusCodes;
 import com.student.management.repository.HearingAnswerMapper;
 import com.student.management.repository.HearingItemMapper;
 import com.student.management.repository.HearingTokenMapper;
@@ -35,12 +36,8 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class HearingService {
 
-    private static final String STATUS_PRE_HEARING = "PRE_HEARING";
-    private static final String STATUS_POST_HEARING = "POST_HEARING";
-    private static final String STATUS_ENROLLED = "ENROLLED";
-    private static final String STATUS_COMPLETED = "COMPLETED";
-    private static final String STATUS_PROVISIONAL = "PROVISIONAL";
-    private static final String STATUS_WITHDRAWN = "WITHDRAWN";
+    /** ヒアリング URL トークンの有効期限（発行からの時間） */
+    private static final int HEARING_TOKEN_TTL_HOURS = 72;
     private static final ZoneId ZONE_TOKYO = ZoneId.of("Asia/Tokyo");
 
     private final StudentMapper studentMapper;
@@ -66,7 +63,7 @@ public class HearingService {
     @Transactional
     public void issueTokenIfAbsent(Long studentId) {
         String st = studentMapper.findStatusById(studentId);
-        if (st == null || !STATUS_PRE_HEARING.equals(st)) {
+        if (st == null || !StudentStatusCodes.PRE_HEARING.equals(st)) {
             return;
         }
         if (hearingTokenMapper.findActiveUnusedByStudentId(studentId).isPresent()) {
@@ -79,7 +76,6 @@ public class HearingService {
      * 有効な未使用トークンがあれば返す（管理画面でのURL表示用）。
      */
     public Optional<HearingTokenIssuedResponse> findActiveToken(Long studentId) {
-        assertStaffOrAdmin();
         if (!studentMapper.existsById(studentId)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "受講生が見つかりません");
         }
@@ -92,12 +88,11 @@ public class HearingService {
      */
     @Transactional
     public HearingTokenIssuedResponse rotateToken(Long studentId) {
-        assertStaffOrAdmin();
         String st = studentMapper.findStatusById(studentId);
         if (st == null) {
             throw new ApiException(HttpStatus.NOT_FOUND, "受講生が見つかりません");
         }
-        if (!STATUS_PRE_HEARING.equals(st)) {
+        if (!StudentStatusCodes.PRE_HEARING.equals(st)) {
             throw new ApiException(HttpStatus.CONFLICT, "ヒアリング前の受講生のみトークンを発行できます");
         }
         hearingTokenMapper.markAllUnusedUsedForStudent(studentId, LocalDateTime.now(ZONE_TOKYO));
@@ -109,6 +104,7 @@ public class HearingService {
         HearingToken token = hearingTokenMapper.findByToken(tokenValue)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "無効なURLです"));
 
+        // 早期リターン（UX）。同時リクエスト時の最終判定は submitAnswers 側の markUsedIfUnused に委ねる。
         if (token.getUsedAt() != null) {
             throw new ApiException(HttpStatus.GONE, "このURLはすでに使用済みです");
         }
@@ -126,14 +122,14 @@ public class HearingService {
 
         String displayName = maskDisplayName(student.getName());
         String status = student.getStatus();
-        boolean canSubmit = STATUS_PRE_HEARING.equals(status);
+        boolean canSubmit = StudentStatusCodes.PRE_HEARING.equals(status);
         String message = "";
         if (!canSubmit) {
             message = switch (status) {
-                case STATUS_ENROLLED, STATUS_POST_HEARING, STATUS_COMPLETED ->
+                case StudentStatusCodes.ENROLLED, StudentStatusCodes.POST_HEARING, StudentStatusCodes.COMPLETED ->
                         "すでにヒアリングを完了しているか、受講が開始されています。";
-                case STATUS_PROVISIONAL -> "入金確認前のため、ヒアリングに回答できません。";
-                case STATUS_WITHDRAWN -> "退会済みのため、ヒアリングに回答できません。";
+                case StudentStatusCodes.PROVISIONAL -> "入金確認前のため、ヒアリングに回答できません。";
+                case StudentStatusCodes.WITHDRAWN -> "退会済みのため、ヒアリングに回答できません。";
                 default -> "現在の状態ではヒアリングに回答できません。";
             };
         }
@@ -146,6 +142,7 @@ public class HearingService {
         HearingToken token = hearingTokenMapper.findByToken(tokenValue)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "無効なURLです"));
 
+        // 早期リターン（UX）。同時送信の排他は直後の markUsedIfUnused が担う。
         if (token.getUsedAt() != null) {
             throw new ApiException(HttpStatus.GONE, "このURLはすでに使用済みです");
         }
@@ -156,7 +153,7 @@ public class HearingService {
 
         Long studentId = token.getStudentId();
         String status = studentMapper.findStatusById(studentId);
-        if (!STATUS_PRE_HEARING.equals(status)) {
+        if (!StudentStatusCodes.PRE_HEARING.equals(status)) {
             throw new ApiException(HttpStatus.CONFLICT, "ヒアリングに回答できる状態ではありません");
         }
 
@@ -193,7 +190,7 @@ public class HearingService {
             hearingAnswerMapper.upsert(studentId, item.getId(), text, now);
         }
 
-        studentMapper.updateStatus(studentId, STATUS_ENROLLED);
+        studentMapper.updateStatus(studentId, StudentStatusCodes.ENROLLED);
     }
 
     public List<HearingAnswerRowResponse> listAnswersForStudent(Long studentId) {
@@ -210,7 +207,7 @@ public class HearingService {
         HearingToken row = new HearingToken();
         row.setStudentId(studentId);
         row.setToken(generateToken());
-        row.setExpiresAt(null);
+        row.setExpiresAt(LocalDateTime.now(ZONE_TOKYO).plusHours(HEARING_TOKEN_TTL_HOURS));
         row.setUsedAt(null);
         hearingTokenMapper.insert(row);
         return row;
@@ -268,14 +265,4 @@ public class HearingService {
         return null;
     }
 
-    private void assertStaffOrAdmin() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "認証情報を取得できません");
-        }
-        String role = userDetails.getUser().getRole();
-        if (!"ADMIN".equals(role) && !"STAFF".equals(role)) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "アクセス権限がありません");
-        }
-    }
 }

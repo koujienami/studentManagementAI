@@ -6,6 +6,7 @@ import com.student.management.dto.payment.PaymentUpdateRequest;
 import com.student.management.entity.Payment;
 import com.student.management.entity.PaymentRow;
 import com.student.management.exception.ApiException;
+import com.student.management.domain.StudentStatusCodes;
 import com.student.management.repository.PaymentMapper;
 import com.student.management.repository.StudentMapper;
 import com.student.management.security.CustomUserDetails;
@@ -27,8 +28,6 @@ public class PaymentService {
     private static final String ROLE_INSTRUCTOR = "INSTRUCTOR";
     private static final String PAYMENT_UNPAID = "UNPAID";
     private static final String PAYMENT_PAID = "PAID";
-    private static final String STATUS_PROVISIONAL = "PROVISIONAL";
-    private static final String STATUS_PRE_HEARING = "PRE_HEARING";
     private static final ZoneId ZONE_TOKYO = ZoneId.of("Asia/Tokyo");
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_PAGE_SIZE = 20;
@@ -130,8 +129,8 @@ public class PaymentService {
 
     private void maybeAdvanceStudentAfterPayment(Long studentId) {
         String st = studentMapper.findStatusById(studentId);
-        if (STATUS_PROVISIONAL.equals(st)) {
-            studentMapper.updateStatus(studentId, STATUS_PRE_HEARING);
+        if (StudentStatusCodes.PROVISIONAL.equals(st)) {
+            studentMapper.updateStatus(studentId, StudentStatusCodes.PRE_HEARING);
             hearingService.issueTokenIfAbsent(studentId);
         }
     }

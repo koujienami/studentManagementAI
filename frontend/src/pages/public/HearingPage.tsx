@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,13 +14,20 @@ import axios from 'axios';
 export function HearingPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [answers, setAnswers] = useState<Record<number, string>>({});
 
   const sessionQuery = useQuery({
     queryKey: ['hearing-session', token],
-    queryFn: () => fetchHearingSession(token!),
+    queryFn: () => {
+      if (!token) {
+        throw new Error('トークンがありません');
+      }
+      return fetchHearingSession(token);
+    },
     enabled: Boolean(token),
     retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
   });
 
   const items = useMemo(
@@ -40,6 +47,7 @@ export function HearingPage() {
       await submitHearingAnswers(token, payload);
     },
     onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ['hearing-session', token] });
       navigate(ROUTES.HEARING_COMPLETE);
     },
   });
