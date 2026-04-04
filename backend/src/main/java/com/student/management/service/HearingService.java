@@ -101,17 +101,7 @@ public class HearingService {
     }
 
     public HearingSessionResponse getSession(String tokenValue) {
-        HearingToken token = hearingTokenMapper.findByToken(tokenValue)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "無効なURLです"));
-
-        // 早期リターン（UX）。同時リクエスト時の最終判定は submitAnswers 側の markUsedIfUnused に委ねる。
-        if (token.getUsedAt() != null) {
-            throw new ApiException(HttpStatus.GONE, "このURLはすでに使用済みです");
-        }
-        LocalDateTime now = LocalDateTime.now(ZONE_TOKYO);
-        if (token.getExpiresAt() != null && token.getExpiresAt().isBefore(now)) {
-            throw new ApiException(HttpStatus.GONE, "このURLの有効期限が切れています");
-        }
+        HearingToken token = loadActiveHearingToken(tokenValue);
 
         StudentDetail student = studentMapper.findDetailById(token.getStudentId(), null)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "受講生が見つかりません"));
@@ -139,17 +129,8 @@ public class HearingService {
 
     @Transactional
     public void submitAnswers(String tokenValue, HearingAnswerSubmitRequest request) {
-        HearingToken token = hearingTokenMapper.findByToken(tokenValue)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "無効なURLです"));
-
-        // 早期リターン（UX）。同時送信の排他は直後の markUsedIfUnused が担う。
-        if (token.getUsedAt() != null) {
-            throw new ApiException(HttpStatus.GONE, "このURLはすでに使用済みです");
-        }
+        HearingToken token = loadActiveHearingToken(tokenValue);
         LocalDateTime now = LocalDateTime.now(ZONE_TOKYO);
-        if (token.getExpiresAt() != null && token.getExpiresAt().isBefore(now)) {
-            throw new ApiException(HttpStatus.GONE, "このURLの有効期限が切れています");
-        }
 
         Long studentId = token.getStudentId();
         String status = studentMapper.findStatusById(studentId);
@@ -201,6 +182,23 @@ public class HearingService {
         return hearingAnswerMapper.findByStudentId(studentId).stream()
                 .map(this::toRowResponse)
                 .toList();
+    }
+
+    /**
+     * トークンを取得し、未使用かつ期限内であることを検証する。
+     * 使用済み・期限切れの早期判定は UX 用。同時リクエストの最終的な排他は submitAnswers 内の markUsedIfUnused。
+     */
+    private HearingToken loadActiveHearingToken(String tokenValue) {
+        HearingToken token = hearingTokenMapper.findByToken(tokenValue)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "無効なURLです"));
+        if (token.getUsedAt() != null) {
+            throw new ApiException(HttpStatus.GONE, "このURLはすでに使用済みです");
+        }
+        LocalDateTime now = LocalDateTime.now(ZONE_TOKYO);
+        if (token.getExpiresAt() != null && token.getExpiresAt().isBefore(now)) {
+            throw new ApiException(HttpStatus.GONE, "このURLの有効期限が切れています");
+        }
+        return token;
     }
 
     private HearingToken insertNewToken(Long studentId) {

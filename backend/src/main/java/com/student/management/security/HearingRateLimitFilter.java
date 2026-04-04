@@ -22,7 +22,10 @@ import java.util.regex.Pattern;
 @Component
 public class HearingRateLimitFilter extends OncePerRequestFilter {
 
-    private static final Pattern ANSWERS_POST = Pattern.compile("^/api/hearing/[^/]+/answers$");
+    /** トークンは 64 文字 hex（{@link com.student.management.controller.HearingPublicController} と整合） */
+    private static final Pattern SESSION_GET = Pattern.compile("^/api/hearing/[0-9a-f]{64}$");
+
+    private static final Pattern ANSWERS_POST = Pattern.compile("^/api/hearing/[0-9a-f]{64}/answers$");
 
     private static final int MAX_GET_PER_WINDOW = 60;
     private static final int MAX_POST_ANSWERS_PER_WINDOW = 10;
@@ -101,7 +104,7 @@ public class HearingRateLimitFilter extends OncePerRequestFilter {
         if (!"GET".equalsIgnoreCase(request.getMethod())) {
             return false;
         }
-        return path.startsWith("/api/hearing/") && path.length() > "/api/hearing/".length();
+        return SESSION_GET.matcher(path).matches();
     }
 
     private static boolean isHearingAnswersPost(HttpServletRequest request, String path) {

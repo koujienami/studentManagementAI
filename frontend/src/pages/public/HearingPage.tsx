@@ -11,6 +11,9 @@ import { getApiErrorMessage } from '@/lib/api/errors';
 import { fetchHearingSession, submitHearingAnswers } from '@/lib/api/hearing';
 import axios from 'axios';
 
+/** バックエンド `HearingAnswerItemRequest` の `@Size(max)` と一致させる */
+const HEARING_ANSWER_MAX_CHARS = 10_000;
+
 export function HearingPage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -68,6 +71,14 @@ export function HearingPage() {
     return '';
   }, [answers, items, sessionQuery.data?.canSubmit]);
 
+  const submitReturnedGone = useMemo(() => {
+    if (!submitMutation.isError) {
+      return false;
+    }
+    const err = submitMutation.error;
+    return axios.isAxiosError(err) && err.response?.status === 410;
+  }, [submitMutation.isError, submitMutation.error]);
+
   const errorMessage = useMemo(() => {
     if (!sessionQuery.isError) {
       return '';
@@ -98,11 +109,11 @@ export function HearingPage() {
       <div className="mx-auto max-w-2xl space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">ヒアリングフォーム</h1>
-          <p className="text-muted-foreground mt-2 text-pretty">
-            {sessionQuery.data
-              ? `${sessionQuery.data.displayName}、以下の項目にご回答ください。`
-              : '読み込み中...'}
-          </p>
+          {sessionQuery.data && (
+            <p className="text-muted-foreground mt-2 text-pretty">
+              {`${sessionQuery.data.displayName}、以下の項目にご回答ください。`}
+            </p>
+          )}
         </div>
 
         {sessionQuery.isLoading && (
@@ -145,6 +156,7 @@ export function HearingPage() {
                   <Textarea
                     id={`h-${it.id}`}
                     rows={4}
+                    maxLength={HEARING_ANSWER_MAX_CHARS}
                     value={answers[it.id] ?? ''}
                     onChange={(e) =>
                       setAnswers((prev) => ({
@@ -152,7 +164,7 @@ export function HearingPage() {
                         [it.id]: e.target.value,
                       }))
                     }
-                    disabled={submitMutation.isPending}
+                    disabled={submitMutation.isPending || submitReturnedGone}
                   />
                 </div>
               ))}
@@ -168,7 +180,10 @@ export function HearingPage() {
                 type="button"
                 className="w-full sm:w-auto"
                 disabled={
-                  submitMutation.isPending || Boolean(validationError) || items.length === 0
+                  submitMutation.isPending ||
+                  submitReturnedGone ||
+                  Boolean(validationError) ||
+                  items.length === 0
                 }
                 onClick={() => submitMutation.mutate()}
               >
