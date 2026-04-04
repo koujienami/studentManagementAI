@@ -29,13 +29,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { fetchCourses } from '@/lib/api/courses';
 import { createEnrollment, updateEnrollment } from '@/lib/api/enrollments';
 import { updatePayment } from '@/lib/api/payments';
-import { deleteStudent, fetchStudent, updateStudentStatus } from '@/lib/api/students';
+import {
+  deleteStudent,
+  fetchActiveHearingToken,
+  fetchHearingAnswers,
+  fetchStudent,
+  rotateHearingToken,
+  updateStudentStatus,
+} from '@/lib/api/students';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import type { EnrollmentStatus, StudentEnrollmentSummary, StudentPaymentSummary, StudentStatus } from '@/types';
 
 const STATUS_TRANSITIONS: Record<StudentStatus, StudentStatus[]> = {
   PROVISIONAL: ['PRE_HEARING', 'WITHDRAWN'],
-  PRE_HEARING: ['POST_HEARING', 'WITHDRAWN'],
+  PRE_HEARING: ['POST_HEARING', 'ENROLLED', 'WITHDRAWN'],
   POST_HEARING: ['ENROLLED', 'WITHDRAWN'],
   ENROLLED: ['COMPLETED', 'WITHDRAWN'],
   COMPLETED: [],
@@ -47,6 +54,21 @@ function formatDate(value: string | null) {
   }
 
   return new Date(value).toLocaleDateString('ja-JP');
+}
+
+function formatDateTime(value: string) {
+  try {
+    return new Date(value).toLocaleString('ja-JP');
+  } catch {
+    return value;
+  }
+}
+
+function hearingPublicUrl(token: string) {
+  if (typeof window === 'undefined') {
+    return `/hearing/${token}`;
+  }
+  return `${window.location.origin}/hearing/${token}`;
 }
 
 export function StudentDetailPage() {
@@ -82,6 +104,32 @@ export function StudentDetailPage() {
     queryKey: ['student', studentId],
     queryFn: () => fetchStudent(studentId),
     enabled: Number.isFinite(studentId),
+  });
+
+  const hearingTokenQuery = useQuery({
+    queryKey: ['hearing-token', studentId],
+    queryFn: () => fetchActiveHearingToken(studentId),
+    enabled:
+      Number.isFinite(studentId) &&
+      studentQuery.data?.status === 'PRE_HEARING' &&
+      canManageStudents,
+  });
+
+  const hearingAnswersQuery = useQuery({
+    queryKey: ['hearing-answers', studentId],
+    queryFn: () => fetchHearingAnswers(studentId),
+    enabled: Number.isFinite(studentId) && !!studentQuery.data,
+  });
+
+  const rotateHearingTokenMutation = useMutation({
+    mutationFn: () => rotateHearingToken(studentId),
+    onSuccess: async () => {
+      setActionError('');
+      await queryClient.invalidateQueries({ queryKey: ['hearing-token', studentId] });
+    },
+    onError: (error) => {
+      setActionError(getApiErrorMessage(error, 'ヒアリングURLの再発行に失敗しました'));
+    },
   });
 
   const coursesQuery = useQuery({
@@ -157,6 +205,7 @@ export function StudentDetailPage() {
         queryClient.invalidateQueries({ queryKey: ['student', studentId] }),
         queryClient.invalidateQueries({ queryKey: ['payments'] }),
         queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+        queryClient.invalidateQueries({ queryKey: ['hearing-token', studentId] }),
       ]);
     },
     onError: (error) => {
@@ -172,6 +221,8 @@ export function StudentDetailPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['students'] }),
         queryClient.invalidateQueries({ queryKey: ['student', studentId] }),
+        queryClient.invalidateQueries({ queryKey: ['hearing-token', studentId] }),
+        queryClient.invalidateQueries({ queryKey: ['hearing-answers', studentId] }),
       ]);
     },
     onError: (error) => {
@@ -278,6 +329,89 @@ export function StudentDetailPage() {
               </div>
             </CardContent>
           </Card>
+
+          {canManageStudents && student.status === 'PRE_HEARING' && (
+            <Card>
+              <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
+                <CardTitle>ヒアリング用URL</CardTitle>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={rotateHearingTokenMutation.isPending}
+                  onClick={() => rotateHearingTokenMutation.mutate()}
+                >
+                  {rotateHearingTokenMutation.isPending ? '発行中...' : 'URLを再発行'}
+                </Button>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-muted-foreground text-sm text-pretty">
+                  入金確認後に自動発行される場合があります。未発行のときや紛失時は「URLを再発行」で新しいリンクを発行してください。受講生へこのURLを共有し、ヒアリングに回答してもらいます。
+                </p>
+                {hearingTokenQuery.isLoading ? (
+                  <p className="text-muted-foreground text-sm">読み込み中...</p>
+                ) : hearingTokenQuery.data ? (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <code className="bg-muted max-w-full flex-1 truncate rounded-md px-3 py-2 text-xs">
+                      {hearingPublicUrl(hearingTokenQuery.data)}
+                    </code>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      className="shrink-0"
+                      onClick={async () => {
+                        try {
+                          await navigator.clipboard.writeText(hearingPublicUrl(hearingTokenQuery.data!));
+                          setActionError('');
+                        } catch {
+                          setActionError('クリップボードへのコピーに失敗しました');
+                        }
+                      }}
+                    >
+                      コピー
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">
+                    有効なURLがありません。「URLを再発行」で発行してください。
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {hearingAnswersQuery.data && hearingAnswersQuery.data.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>ヒアリング回答</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>項目</TableHead>
+                      <TableHead>回答</TableHead>
+                      <TableHead className="w-[180px]">回答日時</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {hearingAnswersQuery.data.map((row) => (
+                      <TableRow key={row.hearingItemId}>
+                        <TableCell className="align-top font-medium">{row.itemName}</TableCell>
+                        <TableCell className="text-muted-foreground max-w-md whitespace-pre-wrap align-top">
+                          {row.answer || '—'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground align-top text-sm">
+                          {formatDateTime(row.answeredAt)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
 
           {canManageStudents && (
             <Card>

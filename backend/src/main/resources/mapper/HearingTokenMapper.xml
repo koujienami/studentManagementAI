@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.student.management.repository.HearingTokenMapper">
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO hearing_tokens (student_id, token, expires_at, used_at)
+        VALUES (#{studentId}, #{token}, #{expiresAt}, #{usedAt})
+    </insert>
+
+    <select id="findByToken" resultType="com.student.management.entity.HearingToken">
+        SELECT id,
+               student_id AS studentId,
+               token,
+               expires_at AS expiresAt,
+               used_at AS usedAt,
+               created_at AS createdAt
+        FROM hearing_tokens
+        WHERE token = #{token}
+    </select>
+
+    <select id="findActiveUnusedByStudentId" resultType="com.student.management.entity.HearingToken">
+        SELECT id,
+               student_id AS studentId,
+               token,
+               expires_at AS expiresAt,
+               used_at AS usedAt,
+               created_at AS createdAt
+        FROM hearing_tokens
+        WHERE student_id = #{studentId}
+          AND used_at IS NULL
+          AND (expires_at IS NULL OR expires_at &gt; CURRENT_TIMESTAMP)
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
+    <update id="markUsed">
+        UPDATE hearing_tokens
+        SET used_at = #{usedAt}
+        WHERE id = #{id}
+    </update>
+
+    <update id="markAllUnusedUsedForStudent">
+        UPDATE hearing_tokens
+        SET used_at = #{usedAt}
+        WHERE student_id = #{studentId}
+          AND used_at IS NULL
+    </update>
+</mapper>

@@ -37,10 +37,14 @@ public class PaymentService {
 
     private final PaymentMapper paymentMapper;
     private final StudentMapper studentMapper;
+    private final HearingService hearingService;
 
-    public PaymentService(PaymentMapper paymentMapper, StudentMapper studentMapper) {
+    public PaymentService(PaymentMapper paymentMapper,
+                          StudentMapper studentMapper,
+                          HearingService hearingService) {
         this.paymentMapper = paymentMapper;
         this.studentMapper = studentMapper;
+        this.hearingService = hearingService;
     }
 
     public PaginatedResponse<PaymentResponse> list(Long studentId,
@@ -128,6 +132,7 @@ public class PaymentService {
         String st = studentMapper.findStatusById(studentId);
         if (STATUS_PROVISIONAL.equals(st)) {
             studentMapper.updateStatus(studentId, STATUS_PRE_HEARING);
+            hearingService.issueTokenIfAbsent(studentId);
         }
     }
 

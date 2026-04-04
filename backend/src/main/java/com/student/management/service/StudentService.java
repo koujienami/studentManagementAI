@@ -231,7 +231,9 @@ public class StudentService {
 
         return switch (currentStatus) {
             case STATUS_PROVISIONAL -> STATUS_PRE_HEARING.equals(nextStatus) || STATUS_WITHDRAWN.equals(nextStatus);
-            case STATUS_PRE_HEARING -> STATUS_POST_HEARING.equals(nextStatus) || STATUS_WITHDRAWN.equals(nextStatus);
+            case STATUS_PRE_HEARING -> STATUS_POST_HEARING.equals(nextStatus)
+                    || STATUS_ENROLLED.equals(nextStatus)
+                    || STATUS_WITHDRAWN.equals(nextStatus);
             case STATUS_POST_HEARING -> STATUS_ENROLLED.equals(nextStatus) || STATUS_WITHDRAWN.equals(nextStatus);
             case STATUS_ENROLLED -> STATUS_COMPLETED.equals(nextStatus) || STATUS_WITHDRAWN.equals(nextStatus);
             default -> false;
