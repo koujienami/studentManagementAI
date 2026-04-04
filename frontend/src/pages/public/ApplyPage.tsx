@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
@@ -56,11 +56,8 @@ export function ApplyPage() {
     },
   });
 
-  useEffect(() => {
-    if (step === 2 && selectedCourseId == null) {
-      setStep(1);
-    }
-  }, [step, selectedCourseId]);
+  /** step とコース選択の不整合を表示上のみ補正（useEffect で setState しない） */
+  const displayStep: 1 | 2 = step === 2 && selectedCourseId == null ? 1 : step;
 
   const validateStep1 = () => {
     if (selectedCourseId == null) {
@@ -118,9 +115,9 @@ export function ApplyPage() {
         </header>
 
         <ol className="flex items-center justify-center gap-2 text-sm">
-          <StepBadge active={step === 1} done={step > 1} label="コース選択" step={1} />
+          <StepBadge active={displayStep === 1} done={displayStep > 1} label="コース選択" step={1} />
           <span className="text-muted-foreground">—</span>
-          <StepBadge active={step === 2} done={false} label="お客様情報" step={2} />
+          <StepBadge active={displayStep === 2} done={false} label="お客様情報" step={2} />
         </ol>
 
         {coursesQuery.isLoading || referralQuery.isLoading ? (
@@ -142,7 +139,7 @@ export function ApplyPage() {
               {getApiErrorMessage(referralQuery.error, '申込経路の取得に失敗しました')}
             </CardContent>
           </Card>
-        ) : step === 1 ? (
+        ) : displayStep === 1 ? (
           <section className="space-y-4">
             <CourseGrid
               courses={coursesQuery.data ?? []}

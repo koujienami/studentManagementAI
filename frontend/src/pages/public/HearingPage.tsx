@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
@@ -9,16 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ROUTES } from '@/constants';
 import { getApiErrorMessage } from '@/lib/api/errors';
 import { fetchHearingSession, submitHearingAnswers } from '@/lib/api/hearing';
-import type { HearingItem } from '@/types';
 import axios from 'axios';
-
-function initialAnswers(items: HearingItem[]) {
-  const m: Record<number, string> = {};
-  for (const it of items) {
-    m[it.id] = '';
-  }
-  return m;
-}
 
 export function HearingPage() {
   const { token } = useParams<{ token: string }>();
@@ -32,13 +23,10 @@ export function HearingPage() {
     retry: false,
   });
 
-  const items = sessionQuery.data?.items ?? [];
-
-  useEffect(() => {
-    if (sessionQuery.data?.items) {
-      setAnswers(initialAnswers(sessionQuery.data.items));
-    }
-  }, [sessionQuery.data?.items]);
+  const items = useMemo(
+    () => sessionQuery.data?.items ?? [],
+    [sessionQuery.data?.items],
+  );
 
   const submitMutation = useMutation({
     mutationFn: async () => {
