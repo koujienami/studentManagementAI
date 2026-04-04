@@ -1,6 +1,7 @@
 package com.student.management.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.student.management.domain.HearingPublicApiPatterns;
 import com.student.management.dto.ErrorResponse;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -14,18 +15,12 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 
 /**
  * 公開の {@code /api/hearing/**} に対する簡易レート制限（IP 単位・固定ウィンドウ）。
  */
 @Component
 public class HearingRateLimitFilter extends OncePerRequestFilter {
-
-    /** トークンは 64 文字 hex（{@link com.student.management.controller.HearingPublicController} と整合） */
-    private static final Pattern SESSION_GET = Pattern.compile("^/api/hearing/[0-9a-f]{64}$");
-
-    private static final Pattern ANSWERS_POST = Pattern.compile("^/api/hearing/[0-9a-f]{64}/answers$");
 
     private static final int MAX_GET_PER_WINDOW = 60;
     private static final int MAX_POST_ANSWERS_PER_WINDOW = 10;
@@ -104,13 +99,13 @@ public class HearingRateLimitFilter extends OncePerRequestFilter {
         if (!"GET".equalsIgnoreCase(request.getMethod())) {
             return false;
         }
-        return SESSION_GET.matcher(path).matches();
+        return HearingPublicApiPatterns.SESSION_GET.matcher(path).matches();
     }
 
     private static boolean isHearingAnswersPost(HttpServletRequest request, String path) {
         if (!"POST".equalsIgnoreCase(request.getMethod())) {
             return false;
         }
-        return ANSWERS_POST.matcher(path).matches();
+        return HearingPublicApiPatterns.ANSWERS_POST.matcher(path).matches();
     }
 }

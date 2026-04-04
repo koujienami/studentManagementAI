@@ -12,4 +12,5 @@ public class HearingToken {
     private LocalDateTime expiresAt;
     private LocalDateTime usedAt;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS hearing_tokens (
     expires_at TIMESTAMP,
     used_at    TIMESTAMP,
     created_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_hearing_tokens_student
         FOREIGN KEY (student_id) REFERENCES students (id)
 );

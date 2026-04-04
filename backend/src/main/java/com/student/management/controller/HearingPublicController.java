@@ -1,5 +1,6 @@
 package com.student.management.controller;
 
+import com.student.management.domain.HearingPublicApiPatterns;
 import com.student.management.dto.hearing.HearingAnswerSubmitRequest;
 import com.student.management.dto.hearing.HearingSessionResponse;
 import com.student.management.service.HearingService;
@@ -30,13 +31,13 @@ public class HearingPublicController {
 
     @GetMapping("/{token}")
     public ResponseEntity<HearingSessionResponse> getSession(
-            @PathVariable @Pattern(regexp = "^[0-9a-f]{64}$") String token) {
+            @PathVariable @Pattern(regexp = HearingPublicApiPatterns.TOKEN_HEX_64) String token) {
         return ResponseEntity.ok(hearingService.getSession(token));
     }
 
     @PostMapping("/{token}/answers")
     public ResponseEntity<Void> submit(
-            @PathVariable @Pattern(regexp = "^[0-9a-f]{64}$") String token,
+            @PathVariable @Pattern(regexp = HearingPublicApiPatterns.TOKEN_HEX_64) String token,
             @Valid @RequestBody HearingAnswerSubmitRequest request) {
         hearingService.submitAnswers(token, request);
         return ResponseEntity.noContent().build();

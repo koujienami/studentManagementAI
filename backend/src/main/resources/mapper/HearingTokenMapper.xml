@@ -14,7 +14,8 @@
                token,
                expires_at AS expiresAt,
                used_at AS usedAt,
-               created_at AS createdAt
+               created_at AS createdAt,
+               updated_at AS updatedAt
         FROM hearing_tokens
         WHERE token = #{token}
     </select>
@@ -25,7 +26,8 @@
                token,
                expires_at AS expiresAt,
                used_at AS usedAt,
-               created_at AS createdAt
+               created_at AS createdAt,
+               updated_at AS updatedAt
         FROM hearing_tokens
         WHERE student_id = #{studentId}
           AND used_at IS NULL
