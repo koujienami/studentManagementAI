@@ -60,22 +60,22 @@ export function HearingPage() {
     return '';
   }, [answers, items, sessionQuery.data?.canSubmit]);
 
-  const errorMessage = (() => {
-    if (sessionQuery.isError) {
-      const err = sessionQuery.error;
-      if (axios.isAxiosError(err)) {
-        const s = err.response?.status;
-        if (s === 404) {
-          return 'このURLは無効です。お手数ですが担当者までお問い合わせください。';
-        }
-        if (s === 410) {
-          return err.response?.data?.message ?? 'このURLは使用できません。';
-        }
-      }
-      return getApiErrorMessage(sessionQuery.error, 'ヒアリング情報の取得に失敗しました');
+  const errorMessage = useMemo(() => {
+    if (!sessionQuery.isError) {
+      return '';
     }
-    return '';
-  })();
+    const err = sessionQuery.error;
+    if (axios.isAxiosError(err)) {
+      const s = err.response?.status;
+      if (s === 404) {
+        return 'このURLは無効です。お手数ですが担当者までお問い合わせください。';
+      }
+      if (s === 410) {
+        return err.response?.data?.message ?? 'このURLは使用できません。';
+      }
+    }
+    return getApiErrorMessage(sessionQuery.error, 'ヒアリング情報の取得に失敗しました');
+  }, [sessionQuery.isError, sessionQuery.error]);
 
   if (!token) {
     return (
@@ -92,7 +92,7 @@ export function HearingPage() {
           <h1 className="text-3xl font-bold tracking-tight">ヒアリングフォーム</h1>
           <p className="text-muted-foreground mt-2 text-pretty">
             {sessionQuery.data
-              ? `${sessionQuery.data.displayName} の皆さま、以下の項目にご回答ください。`
+              ? `${sessionQuery.data.displayName}、以下の項目にご回答ください。`
               : '読み込み中...'}
           </p>
         </div>

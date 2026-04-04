@@ -4,7 +4,6 @@ import com.student.management.dto.hearing.HearingAnswerSubmitRequest;
 import com.student.management.dto.hearing.HearingSessionResponse;
 import com.student.management.service.HearingService;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,6 +31,6 @@ public class HearingPublicController {
     public ResponseEntity<Void> submit(@PathVariable String token,
                                          @Valid @RequestBody HearingAnswerSubmitRequest request) {
         hearingService.submitAnswers(token, request);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        return ResponseEntity.noContent().build();
     }
 }

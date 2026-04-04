@@ -40,6 +40,14 @@
         WHERE id = #{id}
     </update>
 
+    <!-- 未使用のときのみ使用済みにする（同時リクエストの二重送信を防ぐ） -->
+    <update id="markUsedIfUnused">
+        UPDATE hearing_tokens
+        SET used_at = #{usedAt}
+        WHERE id = #{id}
+          AND used_at IS NULL
+    </update>
+
     <update id="markAllUnusedUsedForStudent">
         UPDATE hearing_tokens
         SET used_at = #{usedAt}

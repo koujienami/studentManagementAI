@@ -18,5 +18,8 @@ public interface HearingTokenMapper {
 
     void markUsed(@Param("id") Long id, @Param("usedAt") LocalDateTime usedAt);
 
+    /** @return 更新行数（0 のときは既に使用済み） */
+    int markUsedIfUnused(@Param("id") Long id, @Param("usedAt") LocalDateTime usedAt);
+
     void markAllUnusedUsedForStudent(@Param("studentId") Long studentId, @Param("usedAt") LocalDateTime usedAt);
 }

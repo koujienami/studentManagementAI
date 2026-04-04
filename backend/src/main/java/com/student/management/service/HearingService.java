@@ -37,7 +37,11 @@ import java.util.stream.Collectors;
 public class HearingService {
 
     private static final String STATUS_PRE_HEARING = "PRE_HEARING";
+    private static final String STATUS_POST_HEARING = "POST_HEARING";
     private static final String STATUS_ENROLLED = "ENROLLED";
+    private static final String STATUS_COMPLETED = "COMPLETED";
+    private static final String STATUS_PROVISIONAL = "PROVISIONAL";
+    private static final String STATUS_WITHDRAWN = "WITHDRAWN";
     private static final ZoneId ZONE_TOKYO = ZoneId.of("Asia/Tokyo");
 
     private final StudentMapper studentMapper;
@@ -127,10 +131,10 @@ public class HearingService {
         String message = "";
         if (!canSubmit) {
             message = switch (status) {
-                case STATUS_ENROLLED, "POST_HEARING", "COMPLETED" ->
+                case STATUS_ENROLLED, STATUS_POST_HEARING, STATUS_COMPLETED ->
                         "すでにヒアリングを完了しているか、受講が開始されています。";
-                case "PROVISIONAL" -> "入金確認前のため、ヒアリングに回答できません。";
-                case "WITHDRAWN" -> "退会済みのため、ヒアリングに回答できません。";
+                case STATUS_PROVISIONAL -> "入金確認前のため、ヒアリングに回答できません。";
+                case STATUS_WITHDRAWN -> "退会済みのため、ヒアリングに回答できません。";
                 default -> "現在の状態ではヒアリングに回答できません。";
             };
         }
@@ -180,13 +184,17 @@ public class HearingService {
             }
         }
 
+        int claimed = hearingTokenMapper.markUsedIfUnused(token.getId(), now);
+        if (claimed == 0) {
+            throw new ApiException(HttpStatus.GONE, "このURLはすでに使用済みです");
+        }
+
         for (HearingItem item : masterItems) {
             String text = answerByItem.getOrDefault(item.getId(), "");
             hearingAnswerMapper.upsert(studentId, item.getId(), text, now);
         }
 
         studentMapper.updateStatus(studentId, STATUS_ENROLLED);
-        hearingTokenMapper.markUsed(token.getId(), now);
     }
 
     public List<HearingAnswerRowResponse> listAnswersForStudent(Long studentId) {
