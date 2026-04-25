@@ -4,30 +4,119 @@
 <mapper namespace="com.student.management.repository.UserMapper">
 
     <sql id="userColumns">
-        id, username, email, password_hash, name, role, created_at, updated_at
+        id, username, email, password_hash, name, role, created_at, updated_at, deleted_at
     </sql>
 
     <select id="findByUsername" resultType="com.student.management.entity.User">
         SELECT <include refid="userColumns"/>
         FROM users
         WHERE username = #{username}
+          AND deleted_at IS NULL
     </select>
 
     <select id="findById" resultType="com.student.management.entity.User">
         SELECT <include refid="userColumns"/>
         FROM users
         WHERE id = #{id}
+          AND deleted_at IS NULL
     </select>
 
     <select id="existsByUsername" resultType="boolean">
-        SELECT EXISTS(SELECT 1 FROM users WHERE username = #{username})
+        SELECT EXISTS(
+            SELECT 1 FROM users
+            WHERE username = #{username}
+              AND deleted_at IS NULL
+        )
+    </select>
+
+    <select id="existsByEmail" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM users
+            WHERE email = #{email}
+              AND deleted_at IS NULL
+        )
+    </select>
+
+    <select id="existsByUsernameExceptId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM users
+            WHERE username = #{username}
+              AND id &lt;&gt; #{id}
+              AND deleted_at IS NULL
+        )
+    </select>
+
+    <select id="existsByEmailExceptId" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM users
+            WHERE email = #{email}
+              AND id &lt;&gt; #{id}
+              AND deleted_at IS NULL
+        )
     </select>
 
     <select id="findByRole" resultType="com.student.management.entity.User">
         SELECT <include refid="userColumns"/>
         FROM users
         WHERE role = #{role}
+          AND deleted_at IS NULL
         ORDER BY name ASC, id ASC
     </select>
+
+    <select id="findAll" resultType="com.student.management.entity.User">
+        SELECT <include refid="userColumns"/>
+        FROM users
+        WHERE deleted_at IS NULL
+        <if test="role != null and role != ''">
+            AND role = #{role}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                LOWER(username) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(email) LIKE '%' || LOWER(#{keyword}) || '%'
+                OR LOWER(name) LIKE '%' || LOWER(#{keyword}) || '%'
+            )
+        </if>
+        ORDER BY role ASC, name ASC, id ASC
+    </select>
+
+    <select id="countActiveAdmins" resultType="long">
+        SELECT COUNT(*)
+        FROM users
+        WHERE role = 'ADMIN'
+          AND deleted_at IS NULL
+    </select>
+
+    <insert id="insert" parameterType="com.student.management.entity.User"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (username, email, password_hash, name, role)
+        VALUES (#{username}, #{email}, #{passwordHash}, #{name}, #{role})
+    </insert>
+
+    <update id="update" parameterType="com.student.management.entity.User">
+        UPDATE users
+        SET email = #{email},
+            name = #{name},
+            role = #{role},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="updatePassword">
+        UPDATE users
+        SET password_hash = #{passwordHash},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
+    <update id="softDelete">
+        UPDATE users
+        SET deleted_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
 
 </mapper>

@@ -1,5 +1,6 @@
 package com.student.management.controller;
 
+import com.student.management.dto.auth.ChangePasswordRequest;
 import com.student.management.dto.auth.LoginRequest;
 import com.student.management.dto.auth.RefreshRequest;
 import com.student.management.dto.auth.TokenResponse;
@@ -7,6 +8,7 @@ import com.student.management.dto.auth.UserResponse;
 import com.student.management.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,5 +44,16 @@ public class AuthController {
     public ResponseEntity<UserResponse> me(@AuthenticationPrincipal UserDetails userDetails) {
         UserResponse response = authService.getCurrentUser(userDetails.getUsername());
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/password")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> changePassword(@AuthenticationPrincipal UserDetails userDetails,
+                                               @Valid @RequestBody ChangePasswordRequest request) {
+        authService.changePassword(
+                userDetails.getUsername(),
+                request.getCurrentPassword(),
+                request.getNewPassword());
+        return ResponseEntity.noContent().build();
     }
 }

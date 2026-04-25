@@ -81,4 +81,23 @@ public class AuthService {
                         HttpStatus.NOT_FOUND, "ユーザーが見つかりません"));
         return UserResponse.from(user);
     }
+
+    @Transactional
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        User user = userMapper.findByUsername(username)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.NOT_FOUND, "ユーザーが見つかりません"));
+
+        if (!passwordEncoder.matches(currentPassword, user.getPasswordHash())) {
+            log.warn("パスワード変更失敗（現在のパスワード不一致）: username={}", username);
+            throw new ApiException(HttpStatus.BAD_REQUEST, "現在のパスワードが正しくありません");
+        }
+
+        if (passwordEncoder.matches(newPassword, user.getPasswordHash())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "新しいパスワードは現在のパスワードと異なる必要があります");
+        }
+
+        userMapper.updatePassword(user.getId(), passwordEncoder.encode(newPassword));
+        log.info("パスワード変更成功: userId={}, username={}", user.getId(), username);
+    }
 }
