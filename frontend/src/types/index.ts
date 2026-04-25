@@ -289,3 +289,31 @@ export interface MemberUpdateInput {
   name: string;
   role: Role;
 }
+
+/** 申込経路カテゴリ */
+export type ReferralSourceCategory =
+  | 'WEB'
+  | 'AD'
+  | 'SEARCH'
+  | 'AI'
+  | 'SNS'
+  | 'REFERRAL'
+  | 'OTHER';
+
+/** 申込経路マスタ（管理画面） */
+export interface ReferralSourceAdmin {
+  id: number;
+  name: string;
+  category: ReferralSourceCategory;
+  displayOrder: number;
+  deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 申込経路マスタ登録・更新入力 */
+export interface ReferralSourceInput {
+  name: string;
+  category: ReferralSourceCategory;
+  displayOrder: number;
+}

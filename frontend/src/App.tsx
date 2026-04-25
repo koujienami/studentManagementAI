@@ -25,6 +25,8 @@ import { MailTemplateListPage } from '@/pages/admin/mail-templates/MailTemplateL
 import { MailTemplateEditPage } from '@/pages/admin/mail-templates/MailTemplateEditPage';
 import { MemberListPage } from '@/pages/admin/members/MemberListPage';
 import { MemberEditPage } from '@/pages/admin/members/MemberEditPage';
+import { ReferralSourceListPage } from '@/pages/admin/referral-sources/ReferralSourceListPage';
+import { ReferralSourceEditPage } from '@/pages/admin/referral-sources/ReferralSourceEditPage';
 import { PasswordChangePage } from '@/pages/admin/PasswordChangePage';
 import { EnrollmentListPage } from '@/pages/admin/enrollments/EnrollmentListPage';
 import { PaymentListPage } from '@/pages/admin/payments/PaymentListPage';
@@ -73,6 +75,18 @@ export default function App() {
                 <Route element={<AuthGuard allowedRoles={['ADMIN', 'STAFF']} />}>
                   <Route path="/courses/new" element={<CourseEditPage />} />
                   <Route path="/courses/:id/edit" element={<CourseEditPage />} />
+                </Route>
+
+                {/* 申込経路マスタ管理 */}
+                <Route element={<AuthGuard allowedRoles={['ADMIN', 'STAFF']} />}>
+                  <Route path="/referral-sources" element={<ReferralSourceListPage />} />
+                </Route>
+                <Route element={<AuthGuard allowedRoles={['ADMIN']} />}>
+                  <Route path="/referral-sources/new" element={<ReferralSourceEditPage />} />
+                  <Route
+                    path="/referral-sources/:id/edit"
+                    element={<ReferralSourceEditPage />}
+                  />
                 </Route>
 
                 {/* メールテンプレート管理（管理者のみ） */}
