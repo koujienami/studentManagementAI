@@ -42,6 +42,7 @@ export const ROUTES = {
   PASSWORD_CHANGE: '/password',
   ENROLLMENTS: '/enrollments',
   PAYMENTS: '/payments',
+  ANALYTICS: '/analytics',
 } as const;
 
 /** 受講生の状態ラベル */
