@@ -251,3 +251,41 @@ export interface HearingAnswerRow {
   answer: string;
   answeredAt: string;
 }
+
+/** 運営メンバー一覧項目 */
+export interface MemberListItem {
+  id: number;
+  username: string;
+  email: string;
+  name: string;
+  role: Role;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 運営メンバー詳細 */
+export interface MemberDetail {
+  id: number;
+  username: string;
+  email: string;
+  name: string;
+  role: Role;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** 運営メンバー登録入力 */
+export interface MemberCreateInput {
+  username: string;
+  email: string;
+  name: string;
+  role: Role;
+  password: string;
+}
+
+/** 運営メンバー更新入力 */
+export interface MemberUpdateInput {
+  email: string;
+  name: string;
+  role: Role;
+}
