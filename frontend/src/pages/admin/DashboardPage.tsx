@@ -39,7 +39,15 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-3xl font-bold tracking-tight">ダッシュボード</h2>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <h2 className="text-3xl font-bold tracking-tight">ダッシュボード</h2>
+        <Link
+          to={ROUTES.ANALYTICS}
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          集計・分析を見る →
+        </Link>
+      </div>
       {isError && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
           統計データの取得に失敗しました。

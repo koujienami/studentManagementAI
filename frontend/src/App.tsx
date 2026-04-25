@@ -27,6 +27,7 @@ import { MemberListPage } from '@/pages/admin/members/MemberListPage';
 import { MemberEditPage } from '@/pages/admin/members/MemberEditPage';
 import { ReferralSourceListPage } from '@/pages/admin/referral-sources/ReferralSourceListPage';
 import { ReferralSourceEditPage } from '@/pages/admin/referral-sources/ReferralSourceEditPage';
+import { AnalyticsPage } from '@/pages/admin/analytics/AnalyticsPage';
 import { PasswordChangePage } from '@/pages/admin/PasswordChangePage';
 import { EnrollmentListPage } from '@/pages/admin/enrollments/EnrollmentListPage';
 import { PaymentListPage } from '@/pages/admin/payments/PaymentListPage';
@@ -87,6 +88,11 @@ export default function App() {
                     path="/referral-sources/:id/edit"
                     element={<ReferralSourceEditPage />}
                   />
+                </Route>
+
+                {/* 集計・分析 */}
+                <Route element={<AuthGuard allowedRoles={['ADMIN', 'STAFF']} />}>
+                  <Route path="/analytics" element={<AnalyticsPage />} />
                 </Route>
 
                 {/* メールテンプレート管理（管理者のみ） */}

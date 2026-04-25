@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.student.management.repository.AnalyticsMapper">
+
+    <select id="aggregateByReferralSource" resultType="com.student.management.dto.analytics.ReferralSourceStatItem">
+        SELECT
+            rs.id            AS id,
+            rs.name          AS name,
+            rs.category      AS category,
+            COUNT(s.id)      AS studentCount
+        FROM referral_sources rs
+        LEFT JOIN students s
+               ON s.referral_source_id = rs.id
+                  <if test="from != null">
+                      AND s.created_at &gt;= #{from}
+                  </if>
+                  <if test="to != null">
+                      AND s.created_at &lt; (CAST(#{to} AS DATE) + INTERVAL '1 day')
+                  </if>
+        WHERE rs.deleted_at IS NULL
+        GROUP BY rs.id, rs.name, rs.category, rs.display_order
+        ORDER BY rs.display_order ASC, rs.id ASC
+    </select>
+
+    <select id="aggregateByCourse" resultType="com.student.management.dto.analytics.CourseStatItem">
+        SELECT
+            c.id   AS id,
+            c.name AS name,
+            COUNT(DISTINCT e.id) AS enrollmentCount,
+            COALESCE(SUM(CASE WHEN p.status = 'PAID'   THEN p.amount ELSE 0 END), 0) AS revenuePaid,
+            COALESCE(SUM(CASE WHEN p.status = 'UNPAID' THEN p.amount ELSE 0 END), 0) AS revenueUnpaid
+        FROM courses c
+        LEFT JOIN enrollments e
+               ON e.course_id = c.id
+                  <if test="from != null">
+                      AND e.created_at &gt;= #{from}
+                  </if>
+                  <if test="to != null">
+                      AND e.created_at &lt; (CAST(#{to} AS DATE) + INTERVAL '1 day')
+                  </if>
+        LEFT JOIN payments p
+               ON p.enrollment_id = e.id
+        GROUP BY c.id, c.name
+        ORDER BY enrollmentCount DESC, c.id ASC
+    </select>
+
+    <select id="aggregateMonthly" resultType="com.student.management.dto.analytics.MonthlyStatItem">
+        WITH months AS (
+            SELECT generate_series(
+                date_trunc('month', CURRENT_DATE) - INTERVAL '1 month' * (#{months} - 1),
+                date_trunc('month', CURRENT_DATE),
+                INTERVAL '1 month'
+            )::date AS month_start
+        )
+        SELECT
+            to_char(m.month_start, 'YYYY-MM') AS month,
+            COALESCE(s.cnt, 0)  AS newStudents,
+            COALESCE(p.paid, 0) AS paidAmount,
+            COALESCE(p.unpaid, 0) AS unpaidAmount
+        FROM months m
+        LEFT JOIN (
+            SELECT date_trunc('month', created_at)::date AS month_start, COUNT(*) AS cnt
+            FROM students
+            GROUP BY date_trunc('month', created_at)
+        ) s ON s.month_start = m.month_start
+        LEFT JOIN (
+            SELECT
+                date_trunc('month', COALESCE(paid_date, due_date))::date AS month_start,
+                SUM(CASE WHEN status = 'PAID'   THEN amount ELSE 0 END) AS paid,
+                SUM(CASE WHEN status = 'UNPAID' THEN amount ELSE 0 END) AS unpaid
+            FROM payments
+            GROUP BY date_trunc('month', COALESCE(paid_date, due_date))
+        ) p ON p.month_start = m.month_start
+        ORDER BY m.month_start ASC
+    </select>
+
+    <select id="summarizePayments" resultType="com.student.management.dto.analytics.PaymentSummary">
+        SELECT
+            COALESCE(SUM(CASE WHEN status = 'PAID'   THEN amount ELSE 0 END), 0) AS totalPaid,
+            COALESCE(SUM(CASE WHEN status = 'UNPAID' THEN amount ELSE 0 END), 0) AS totalUnpaid,
+            COALESCE(SUM(CASE WHEN status = 'PAID'   THEN 1 ELSE 0 END), 0)      AS countPaid,
+            COALESCE(SUM(CASE WHEN status = 'UNPAID' THEN 1 ELSE 0 END), 0)      AS countUnpaid
+        FROM payments
+        <where>
+            <if test="from != null">
+                AND COALESCE(paid_date, due_date) &gt;= #{from}
+            </if>
+            <if test="to != null">
+                AND COALESCE(paid_date, due_date) &lt;= #{to}
+            </if>
+        </where>
+    </select>
+
+    <select id="countNewStudents" resultType="long">
+        SELECT COUNT(*)
+        FROM students
+        <where>
+            <if test="from != null">
+                AND created_at &gt;= #{from}
+            </if>
+            <if test="to != null">
+                AND created_at &lt; (CAST(#{to} AS DATE) + INTERVAL '1 day')
+            </if>
+        </where>
+    </select>
+
+    <select id="countActiveEnrollments" resultType="long">
+        SELECT COUNT(*) FROM enrollments WHERE status = 'ENROLLED'
+    </select>
+
+</mapper>

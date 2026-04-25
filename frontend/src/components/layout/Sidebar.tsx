@@ -18,6 +18,7 @@ const navItems: NavItem[] = [
   { label: '決済', to: '/payments' },
   { label: 'コース管理', to: '/courses' },
   { label: '申込経路マスタ', to: '/referral-sources', roles: ['ADMIN', 'STAFF'] },
+  { label: '集計・分析', to: '/analytics', roles: ['ADMIN', 'STAFF'] },
   { label: 'メールテンプレート', to: '/mail-templates', roles: ['ADMIN'] },
   { label: '運営メンバー', to: '/members', roles: ['ADMIN'] },
 ];

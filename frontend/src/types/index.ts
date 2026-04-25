@@ -317,3 +317,43 @@ export interface ReferralSourceInput {
   category: ReferralSourceCategory;
   displayOrder: number;
 }
+
+/** 集計: 申込経路別 */
+export interface ReferralSourceStatItem {
+  id: number;
+  name: string;
+  category: ReferralSourceCategory | string;
+  studentCount: number;
+}
+
+/** 集計: コース別 */
+export interface CourseStatItem {
+  id: number;
+  name: string;
+  enrollmentCount: number;
+  revenuePaid: number;
+  revenueUnpaid: number;
+}
+
+/** 集計: 月次 */
+export interface MonthlyStatItem {
+  month: string;
+  newStudents: number;
+  paidAmount: number;
+  unpaidAmount: number;
+}
+
+/** 集計: 支払いサマリ */
+export interface PaymentSummary {
+  totalPaid: number;
+  totalUnpaid: number;
+  countPaid: number;
+  countUnpaid: number;
+}
+
+/** 集計: 概要 */
+export interface AnalyticsOverview {
+  newStudents: number;
+  activeEnrollments: number;
+  payments: PaymentSummary;
+}
